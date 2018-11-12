@@ -14,7 +14,7 @@ public class Controller : MonoBehaviour
 
         for (int i = 0; i < vectors.Length; i++)
         {
-            vectors[i] = Vector3.forward * i + Vector3.right * 0.1f * i;
+            vectors[i] = Vector3.forward * i + Vector3.right * i;
         }
 
         var go = new GameObject();

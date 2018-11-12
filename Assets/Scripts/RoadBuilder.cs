@@ -12,21 +12,28 @@ public class RoadBuilder : MonoBehaviour
         var uvs = new Vector2[vertices.Length];
         var vertexIndex = 0;
         var triIndex = 0;
-        var direction = Vector3.zero;
+        
 
         for (int anchorIndex = 0; anchorIndex < anchors.Length; anchorIndex++)
         { 
-            Vector3 right;
+            var direction = Vector3.zero;
 
             if (anchorIndex < anchors.Length - 1)
             {
-                direction = (anchors[anchorIndex + 1] - anchors[anchorIndex]).normalized;
+                direction += anchors[anchorIndex + 1] - anchors[anchorIndex];
             }
 
-            right = Vector3.Cross(direction, Vector3.up);
+            if (anchorIndex > 0)
+            {
+                direction += anchors[anchorIndex] - anchors[anchorIndex - 1];
+            }
 
-            vertices[vertexIndex] = anchors[anchorIndex] + right * 0.5f * width;
-            vertices[vertexIndex + 1] = anchors[anchorIndex] - right * 0.5f * width;
+            direction.Normalize();
+
+            var left = new Vector3(-direction.z, 0, direction.x);
+
+            vertices[vertexIndex] = anchors[anchorIndex] + left * 0.5f * width;
+            vertices[vertexIndex + 1] = anchors[anchorIndex] - left * 0.5f * width;
 
             var completionPercent = anchorIndex / (float) (anchors.Length - 1);
             var v = 1 - Mathf.Abs(2 * completionPercent - 1);
