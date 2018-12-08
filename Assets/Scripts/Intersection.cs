@@ -72,6 +72,24 @@ namespace experimental
         {
             foreach (var segment in segments)
             {
+
+
+                if (Mathf.Approximately(Vector3.SqrMagnitude(segment.PointA - Node.Position), 0))
+                {
+
+                }
+
+
+                foreach (var point in segment.SegmentIntersectionPoints)
+                {
+                    IntersectionPoints.Add(point);
+                }
+
+                continue;
+
+
+
+
                 if (segment.SegmentIntersectionPoints.Count == 0)
                 {
                     continue;

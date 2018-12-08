@@ -195,13 +195,13 @@ namespace experimental
                 foreach (var pos in intersection.Node.LeftBound.Values)
                 {
                     Gizmos.color = Color.cyan;
-                    Gizmos.DrawSphere(pos, 1);
+                    Gizmos.DrawSphere(pos, 0.5f);
                 }
 
                 foreach (var pos in intersection.Node.RightBound.Values)
                 {
                     Gizmos.color = Color.cyan;
-                    Gizmos.DrawSphere(pos, 1);
+                    Gizmos.DrawSphere(pos, 0.5f);
                 }
             }
 
@@ -222,7 +222,8 @@ namespace experimental
                     Gizmos.DrawLine(point, nextPoint);
                 }
 
-                Gizmos.DrawLine(intersection.IntersectionPoints[0], intersection.IntersectionPoints[intersection.IntersectionPoints.Count - 1]);
+                if(intersection.IntersectionPoints.Count - 1 > 0)   
+                    Gizmos.DrawLine(intersection.IntersectionPoints[0], intersection.IntersectionPoints[intersection.IntersectionPoints.Count - 1]);
             }
         }
 
