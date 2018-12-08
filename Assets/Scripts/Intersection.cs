@@ -9,7 +9,6 @@ namespace experimental
         {
             public Vector3 BorderPointA { get; }
             public Vector3 BorderPointB { get; }
-            public bool HasIntersectionPoint { get; set; }
             public List<Vector3> BoundIntersectionPoints { get; } = new List<Vector3>();
 
             public Bound(Vector3 borderPointA, Vector3 borderPointB)
@@ -87,56 +86,54 @@ namespace experimental
             FilterSegmentsIntersectionPoints(roadSegments);
         }
 
-        private void FilterSegmentsIntersectionPoints(List<RoadSegment> segments)
+        private void FilterSegmentsIntersectionPoints(IEnumerable<RoadSegment> segments)
         {
-            //foreach (var segment in segments)
-            //{
-            //    if (Mathf.Approximately(Vector3.SqrMagnitude(segment.PointA.Position - Node.Position), 0))
-            //    {
+            foreach (var segment in segments)
+            {
+                var outerNodePosition = segment.PointA == Node ? segment.PointB.Position : segment.PointA.Position;
 
-            //    }
+                var minSqrDist = float.MaxValue;
+                
+                var rightIntersectionBoundPos = Vector3.zero;
 
+                if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
+                {
+                    var leftIntersectionBoundPos = Vector3.zero;
 
-            //    foreach (var point in segment.SegmentIntersectionPoints)
-            //    {
-            //        IntersectionPoints.Add(point);
-            //    }
+                    foreach (var point in segment.LeftBound.BoundIntersectionPoints)
+                    {
+                        var sqrDist = Vector3.SqrMagnitude(outerNodePosition - point);
 
-            //    continue;
+                        if (sqrDist < minSqrDist)
+                        {
+                            minSqrDist = sqrDist;
+                            leftIntersectionBoundPos = point;
+                        }
+                    }
 
+                    //Node.LeftBound[segment.Road] = leftIntersectionBoundPos;
+                    IntersectionPoints.Add(leftIntersectionBoundPos);
+                }
 
+                if (segment.RightBound.BoundIntersectionPoints.Count > 0)
+                {
+                    minSqrDist = float.MaxValue;
 
+                    foreach (var point in segment.RightBound.BoundIntersectionPoints)
+                    {
+                        var sqrDist = Vector3.SqrMagnitude(outerNodePosition - point);
 
-            //    if (segment.SegmentIntersectionPoints.Count == 0)
-            //    {
-            //        continue;
-            //    }
+                        if (sqrDist < minSqrDist)
+                        {
+                            minSqrDist = sqrDist;
+                            rightIntersectionBoundPos = point;
+                        }
+                    }
 
-            //    var furthestSqrMag = float.MinValue;
-            //    var furthestPoint = Vector3.zero;
-
-            //    foreach (var point in segment.SegmentIntersectionPoints)
-            //    {
-            //        var sqrDist = Vector3.SqrMagnitude(Node.Position - point);
-
-            //        if (sqrDist > furthestSqrMag)
-            //        {
-            //            furthestSqrMag = sqrDist;
-            //            furthestPoint = point;
-            //        }
-            //    }
-
-            //    if (isLeft)
-            //    {
-            //        Node.LeftBound[segment.Road] = furthestPoint;
-            //    }
-            //    else
-            //    {
-            //        Node.RightBound[segment.Road] = furthestPoint;
-            //    }
-
-            //    IntersectionPoints.Add(furthestPoint);
-            //}
+                    //Node.RightBound[segment.Road] = rightIntersectionBoundPos;
+                    IntersectionPoints.Add(rightIntersectionBoundPos);
+                }
+            }
         }
 
         private void SetIntersectionPoint(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
@@ -147,8 +144,6 @@ namespace experimental
             {
                 boundA.BoundIntersectionPoints.Add(point);
                 boundB.BoundIntersectionPoints.Add(point);
-                boundA.HasIntersectionPoint = true;
-                boundB.HasIntersectionPoint = true;
             }
         }
 
@@ -156,7 +151,7 @@ namespace experimental
         {
             var point = LineLineIntersection(boundA, boundB);
 
-            if (!boundA.HasIntersectionPoint && !boundB.HasIntersectionPoint && !CheckPoint(point, boundA) && !CheckPoint(point, boundB))
+            if (boundA.BoundIntersectionPoints.Count == 0 && boundB.BoundIntersectionPoints.Count == 0 && !CheckPoint(point, boundA) && !CheckPoint(point, boundB))
             {
                 IntersectionPoints.Add(point);
             }

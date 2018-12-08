@@ -149,7 +149,7 @@ namespace experimental
         {
             foreach (var seg in segments)
             {
-                if (seg.LeftBound.HasIntersectionPoint)
+                if (seg.LeftBound.BoundIntersectionPoints.Count > 0)
                 {
                     continue;
                 }
