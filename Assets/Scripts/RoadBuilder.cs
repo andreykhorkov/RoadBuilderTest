@@ -3,6 +3,43 @@ using UnityEngine;
 
 namespace experimental
 {
+    public class ClockwiseComparer : IComparer<Vector3>
+    {
+        private Vector3 m_Origin;
+        public Vector3 origin { get { return m_Origin; } set { m_Origin = value; } }
+
+        public ClockwiseComparer(Vector3 origin)
+        {
+            m_Origin = origin;
+        }
+
+        public int Compare(Vector3 first, Vector3 second)
+        {
+            return IsClockwise(first, second, m_Origin);
+        }
+
+        public static int IsClockwise(Vector3 first, Vector3 second, Vector3 origin)
+        {
+            if (first == second)
+                return 0;
+
+            Vector3 firstOffset = first - origin;
+            Vector3 secondOffset = second - origin;
+
+            float angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
+            float angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
+
+            if (angle1 < angle2)
+                return -1;
+
+            if (angle1 > angle2)
+                return 1;
+
+            // Check to see which point is closest
+            return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? -1 : 1;
+        }
+    }
+
     public class RoadBuilder : MonoBehaviour
     {
         [SerializeField] private Road[] roads;
@@ -136,7 +173,7 @@ namespace experimental
                 FindStlnPoint(intersection.RightSegments, intersection);
                 FindStlnPoint(intersection.LeftSegments, intersection);
 
-                intersection.IntersectionPoints.Sort(new HelpTools.ClockwiseComparer(intersection.Node.Position));
+                intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
         }
 
