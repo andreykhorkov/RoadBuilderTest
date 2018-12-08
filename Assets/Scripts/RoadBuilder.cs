@@ -83,8 +83,7 @@ namespace experimental
 
                 if (roadList.Count > 1)
                 {
-                    var roadLeftSegmentsList = new List<RoadSegment>();
-                    var roadRightSegmentsList = new List<RoadSegment>();
+                    var roadSegmentsList = new List<RoadSegment>();
 
                     for (int i = 0; i < roadList.Count; i++)
                     {
@@ -107,8 +106,7 @@ namespace experimental
                             var prevNodeLeftPos = road.Nodes[prevIndex].LeftBound[road];
                             var prevNodeRightPos = road.Nodes[prevIndex].RightBound[road];
 
-                            roadLeftSegmentsList.Add(new RoadSegment(prevNodeLeftPos, currentNodeLeftPos, road));
-                            roadRightSegmentsList.Add(new RoadSegment(prevNodeRightPos, currentNodeRightPos, road));
+                            roadSegmentsList.Add(new RoadSegment(road.Nodes[prevIndex], road.Nodes[nodeIndex], road));
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
@@ -122,12 +120,11 @@ namespace experimental
                                 continue;
                             }
 
-                            roadLeftSegmentsList.Add(new RoadSegment(nextNodeLeftPos, currentNodeLeftPos, road));
-                            roadRightSegmentsList.Add(new RoadSegment(nextNodeRightPos, currentNodeRightPos, road));
+                            roadSegmentsList.Add(new RoadSegment(road.Nodes[nextIndex], road.Nodes[nodeIndex], road));
                         }
                     }
                     
-                    Intersections.Add(new Intersection(roadLeftSegmentsList, roadRightSegmentsList, node));
+                    Intersections.Add(new Intersection(roadSegmentsList, node));
                 }
             }
         }
@@ -152,17 +149,17 @@ namespace experimental
         {
             foreach (var seg in segments)
             {
-                if (seg.HasIntersectionPoint)
+                if (seg.LeftBound.HasIntersectionPoint)
                 {
                     continue;
                 }
 
-                var point = (seg.PointA - intersection.Node.Position).sqrMagnitude <
-                            (seg.PointB - intersection.Node.Position).sqrMagnitude
+                var point = (seg.LeftBound.BorderPointA - intersection.Node.Position).sqrMagnitude <
+                            (seg.LeftBound.BorderPointB - intersection.Node.Position).sqrMagnitude
                     ? seg.PointA
                     : seg.PointB;
 
-                intersection.IntersectionPoints.Add(point);
+                intersection.IntersectionPoints.Add(point.Position);
             }
         }
 
@@ -170,8 +167,7 @@ namespace experimental
         {
             foreach (var intersection in Intersections)
             {
-                FindStlnPoint(intersection.RightSegments, intersection);
-                FindStlnPoint(intersection.LeftSegments, intersection);
+                FindStlnPoint(intersection.RoadSegments, intersection);
 
                 intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }

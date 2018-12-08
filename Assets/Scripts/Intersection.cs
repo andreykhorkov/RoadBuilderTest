@@ -5,150 +5,167 @@ namespace experimental
 {
     public class RoadSegment
     {
-        public Vector3 PointA { get; }
-        public Vector3 PointB { get; }
-        public bool HasIntersectionPoint { get; set; }
-        public List<Vector3> SegmentIntersectionPoints { get; } = new List<Vector3>();
-        public Road Road { get; }
+        public class Bound
+        {
+            public Vector3 BorderPointA { get; }
+            public Vector3 BorderPointB { get; }
+            public bool HasIntersectionPoint { get; set; }
+            public List<Vector3> BoundIntersectionPoints { get; } = new List<Vector3>();
 
-        public RoadSegment(Vector3 pointA, Vector3 pointB, Road road)
+            public Bound(Vector3 borderPointA, Vector3 borderPointB)
+            {
+                BorderPointA = borderPointA;
+                BorderPointB = borderPointB;
+            }
+        }
+
+        public Node PointA { get; }
+        public Node PointB { get; }
+        public Road Road { get; }
+        public Bound LeftBound { get; }
+        public Bound RightBound { get; }
+
+        public RoadSegment(Node pointA, Node pointB, Road road)
         {
             PointA = pointA;
             PointB = pointB;
             Road = road;
+            LeftBound = new Bound(pointA.LeftBound[road], pointB.LeftBound[road]);
+            RightBound = new Bound(pointA.RightBound[road], pointB.RightBound[road]);
         }
     }
 
     public class Intersection
     {
-        public List<RoadSegment> LeftSegments;
-        public List<RoadSegment> RightSegments;
+        public List<RoadSegment> RoadSegments;
         public List<Vector3> IntersectionPoints;
         public Node Node { get; set; }
 
-        public Intersection(List<RoadSegment> leftSegments, List<RoadSegment> rightSegments, Node node)
+        public Intersection(List<RoadSegment> roadSegments, Node node)
         {
-            LeftSegments = leftSegments;
-            RightSegments = rightSegments;
+            RoadSegments = roadSegments;
             Node = node;
 
             IntersectionPoints = new List<Vector3>();
 
-            for (int i = 0; i < leftSegments.Count; i++)
+            for (int i = 0; i < roadSegments.Count; i++)
             {
-                for (int j = 0; j < leftSegments.Count; j++)
+                for (int j = 0; j < roadSegments.Count; j++)
                 {
                     if (i == j)
                     {
                         continue;
                     }
 
-                    SetIntersectionPoint(leftSegments[i], rightSegments[j]); 
-                    SetIntersectionPoint(leftSegments[i], leftSegments[j]); 
-                    SetIntersectionPoint(rightSegments[i], rightSegments[j]);
+                    var roadSegmentI = roadSegments[i];
+                    var roadSegmentJ = roadSegments[j];
+
+                    SetIntersectionPoint(roadSegmentI.LeftBound, roadSegmentJ.RightBound); 
+                    SetIntersectionPoint(roadSegmentI.LeftBound, roadSegmentJ.LeftBound); 
+                    SetIntersectionPoint(roadSegmentI.RightBound, roadSegmentJ.RightBound);
                 }
             }
 
-            for (int i = 0; i < leftSegments.Count; i++)
+            for (int i = 0; i < roadSegments.Count; i++)
             {
-                for (int j = 0; j < leftSegments.Count; j++)
+                for (int j = 0; j < roadSegments.Count; j++)
                 {
                     if (i == j)
                     {
                         continue;
                     }
 
-                    SetIntersectionPoint2(leftSegments[i], rightSegments[j]);
-                    SetIntersectionPoint2(leftSegments[i], leftSegments[j]);
-                    SetIntersectionPoint2(rightSegments[i], rightSegments[j]);
+                    var roadSegmentI = roadSegments[i];
+                    var roadSegmentJ = roadSegments[j];
+
+                    SetIntersectionPoint2(roadSegmentI.LeftBound, roadSegmentJ.RightBound);
+                    SetIntersectionPoint2(roadSegmentI.LeftBound, roadSegmentJ.LeftBound);
+                    SetIntersectionPoint2(roadSegmentI.RightBound, roadSegmentJ.RightBound);
                 }
             }
 
-            FilterSegmentsIntersectionPoints(leftSegments, true);
-            FilterSegmentsIntersectionPoints(rightSegments, false);
+            FilterSegmentsIntersectionPoints(roadSegments);
         }
 
-        private void FilterSegmentsIntersectionPoints(List<RoadSegment> segments, bool isLeft)
+        private void FilterSegmentsIntersectionPoints(List<RoadSegment> segments)
         {
-            foreach (var segment in segments)
+            //foreach (var segment in segments)
+            //{
+            //    if (Mathf.Approximately(Vector3.SqrMagnitude(segment.PointA.Position - Node.Position), 0))
+            //    {
+
+            //    }
+
+
+            //    foreach (var point in segment.SegmentIntersectionPoints)
+            //    {
+            //        IntersectionPoints.Add(point);
+            //    }
+
+            //    continue;
+
+
+
+
+            //    if (segment.SegmentIntersectionPoints.Count == 0)
+            //    {
+            //        continue;
+            //    }
+
+            //    var furthestSqrMag = float.MinValue;
+            //    var furthestPoint = Vector3.zero;
+
+            //    foreach (var point in segment.SegmentIntersectionPoints)
+            //    {
+            //        var sqrDist = Vector3.SqrMagnitude(Node.Position - point);
+
+            //        if (sqrDist > furthestSqrMag)
+            //        {
+            //            furthestSqrMag = sqrDist;
+            //            furthestPoint = point;
+            //        }
+            //    }
+
+            //    if (isLeft)
+            //    {
+            //        Node.LeftBound[segment.Road] = furthestPoint;
+            //    }
+            //    else
+            //    {
+            //        Node.RightBound[segment.Road] = furthestPoint;
+            //    }
+
+            //    IntersectionPoints.Add(furthestPoint);
+            //}
+        }
+
+        private void SetIntersectionPoint(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
+        {
+            var point = LineLineIntersection(boundA, boundB);
+
+            if (CheckPoint(point, boundA) && CheckPoint(point, boundB))
             {
-
-
-                if (Mathf.Approximately(Vector3.SqrMagnitude(segment.PointA - Node.Position), 0))
-                {
-
-                }
-
-
-                foreach (var point in segment.SegmentIntersectionPoints)
-                {
-                    IntersectionPoints.Add(point);
-                }
-
-                continue;
-
-
-
-
-                if (segment.SegmentIntersectionPoints.Count == 0)
-                {
-                    continue;
-                }
-
-                var furthestSqrMag = float.MinValue;
-                var furthestPoint = Vector3.zero;
-
-                foreach (var point in segment.SegmentIntersectionPoints)
-                {
-                    var sqrDist = Vector3.SqrMagnitude(Node.Position - point);
-
-                    if (sqrDist > furthestSqrMag)
-                    {
-                        furthestSqrMag = sqrDist;
-                        furthestPoint = point;
-                    }
-                }
-
-                if (isLeft)
-                {
-                    Node.LeftBound[segment.Road] = furthestPoint;
-                }
-                else
-                {
-                    Node.RightBound[segment.Road] = furthestPoint;
-                }
-
-                IntersectionPoints.Add(furthestPoint);
+                boundA.BoundIntersectionPoints.Add(point);
+                boundB.BoundIntersectionPoints.Add(point);
+                boundA.HasIntersectionPoint = true;
+                boundB.HasIntersectionPoint = true;
             }
         }
 
-        private void SetIntersectionPoint(RoadSegment segmentA, RoadSegment segmentB)
+        private void SetIntersectionPoint2(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
         {
-            var point = LineLineIntersection(segmentA, segmentB);
+            var point = LineLineIntersection(boundA, boundB);
 
-            if (CheckPoint(point, segmentA) && CheckPoint(point, segmentB))
-            {
-                segmentA.SegmentIntersectionPoints.Add(point);
-                segmentB.SegmentIntersectionPoints.Add(point);
-                segmentA.HasIntersectionPoint = true;
-                segmentB.HasIntersectionPoint = true;
-            }
-        }
-
-        private void SetIntersectionPoint2(RoadSegment segmentA, RoadSegment segmentB)
-        {
-            var point = LineLineIntersection(segmentA, segmentB);
-
-            if (!segmentA.HasIntersectionPoint && !segmentB.HasIntersectionPoint && !CheckPoint(point, segmentA) && !CheckPoint(point, segmentB))
+            if (!boundA.HasIntersectionPoint && !boundB.HasIntersectionPoint && !CheckPoint(point, boundA) && !CheckPoint(point, boundB))
             {
                 IntersectionPoints.Add(point);
             }
         }
 
-        public static bool CheckPoint(Vector3 pos, RoadSegment segment)
+        public static bool CheckPoint(Vector3 pos, RoadSegment.Bound bound)
         {
-            var dirSegment = segment.PointB - segment.PointA;
-            var dirToPos = pos - segment.PointA;
+            var dirSegment = bound.BorderPointB - bound.BorderPointA;
+            var dirToPos = pos - bound.BorderPointA;
             var segmentMagn = dirSegment.magnitude;
             var segmentPosMagn = dirToPos.magnitude;
 
@@ -157,12 +174,12 @@ namespace experimental
             return isPosOnSegment;
         }
 
-        private static Vector3 LineLineIntersection(RoadSegment segmentA, RoadSegment segmentB)
+        private static Vector3 LineLineIntersection(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
         {
-            var A = segmentA.PointA;
-            var B = segmentA.PointB;
-            var C = segmentB.PointA;
-            var D = segmentB.PointB;
+            var A = boundA.BorderPointA;
+            var B = boundA.BorderPointB;
+            var C = boundB.BorderPointA;
+            var D = boundB.BorderPointB;
 
             // Line AB represented as a1x + b1z = c1 
             var a1 = B.z - A.z;
