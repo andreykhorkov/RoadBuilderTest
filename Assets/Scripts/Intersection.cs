@@ -91,10 +91,8 @@ namespace experimental
             foreach (var segment in segments)
             {
                 var outerNodePosition = segment.PointA == Node ? segment.PointB.Position : segment.PointA.Position;
-
                 var minSqrDist = float.MaxValue;
-                
-                var rightIntersectionBoundPos = Vector3.zero;
+                var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
 
                 if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
                 {
@@ -111,13 +109,14 @@ namespace experimental
                         }
                     }
 
-                    //Node.LeftBound[segment.Road] = leftIntersectionBoundPos;
+                    Node.BoundPoints[tuple].LeftBoundPoint = leftIntersectionBoundPos;
                     IntersectionPoints.Add(leftIntersectionBoundPos);
                 }
 
                 if (segment.RightBound.BoundIntersectionPoints.Count > 0)
                 {
                     minSqrDist = float.MaxValue;
+                    var rightIntersectionBoundPos = Vector3.zero;
 
                     foreach (var point in segment.RightBound.BoundIntersectionPoints)
                     {
@@ -130,7 +129,7 @@ namespace experimental
                         }
                     }
 
-                    //Node.RightBound[segment.Road] = rightIntersectionBoundPos;
+                    Node.BoundPoints[tuple].RightBoundPoint = rightIntersectionBoundPos;
                     IntersectionPoints.Add(rightIntersectionBoundPos);
                 }
             }

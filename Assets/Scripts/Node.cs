@@ -6,8 +6,8 @@ namespace experimental
 {
     public class NodeBoundPoints
     {
-        public Vector3 LeftBoundPoint { get; }
-        public Vector3 RightBoundPoint { get; }
+        public Vector3 LeftBoundPoint { get; set; }
+        public Vector3 RightBoundPoint { get; set; }
 
         public NodeBoundPoints(Vector3 leftBoundPoint, Vector3 rightBoundPoint)
         {

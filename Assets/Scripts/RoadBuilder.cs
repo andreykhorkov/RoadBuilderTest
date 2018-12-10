@@ -158,29 +158,25 @@ namespace experimental
         {
             BuildRoads();
 
-            //foreach (var intersection in Intersections)
-            //{
-            //    Gizmos.color = Color.white;
-            //    Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
-            //    Gizmos.color = Color.yellow;
+            foreach (var intersection in Intersections)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
+                Gizmos.color = Color.yellow;
 
-            //    foreach (var point in intersection.IntersectionPoints)
-            //    {
-            //        Gizmos.DrawSphere(point, 0.5f);
-            //    }
+                foreach (var point in intersection.IntersectionPoints)
+                {
+                    Gizmos.DrawSphere(point, 0.5f);
+                }
 
-            //    Gizmos.color = Color.cyan;
+                Gizmos.color = Color.cyan;
 
-            //    foreach (var pos in intersection.Node.LeftBoundPoints.Values)
-            //    {
-            //        Gizmos.DrawSphere(pos, 0.5f);
-            //    }
-
-            //    foreach (var pos in intersection.Node.RightBoundPoints.Values)
-            //    {
-            //        Gizmos.DrawSphere(pos, 0.5f);
-            //    }
-            //}
+                foreach (var boundPoints in intersection.Node.BoundPoints.Values)
+                {
+                    Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
+                    Gizmos.DrawSphere(boundPoints.RightBoundPoint, 0.5f);
+                }
+            }
 
             DrawIntersectionBounds();
         }
