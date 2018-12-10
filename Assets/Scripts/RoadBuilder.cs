@@ -6,17 +6,16 @@ namespace experimental
 {
     public class ClockwiseComparer : IComparer<Vector3>
     {
-        private Vector3 m_Origin;
-        public Vector3 origin { get { return m_Origin; } set { m_Origin = value; } }
+        public Vector3 origin { get; set; }
 
         public ClockwiseComparer(Vector3 origin)
         {
-            m_Origin = origin;
+            this.origin = origin;
         }
 
         public int Compare(Vector3 first, Vector3 second)
         {
-            return IsClockwise(first, second, m_Origin);
+            return IsClockwise(first, second, origin);
         }
 
         public static int IsClockwise(Vector3 first, Vector3 second, Vector3 origin)
