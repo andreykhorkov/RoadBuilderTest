@@ -183,10 +183,10 @@ namespace experimental
                 Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
                 Gizmos.color = Color.yellow;
 
-                foreach (var point in intersection.IntersectionPoints)
-                {
-                    Gizmos.DrawSphere(point, 0.5f);
-                }
+                //foreach (var point in intersection.IntersectionPoints)
+                //{
+                //    Gizmos.DrawSphere(point, 0.5f);
+                //}
 
                 foreach (var pos in intersection.Node.LeftBound.Values)
                 {

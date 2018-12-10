@@ -111,7 +111,7 @@ namespace experimental
                         }
                     }
 
-                    //Node.LeftBound[segment.Road] = leftIntersectionBoundPos;
+                    Node.LeftBound[segment.Road] = leftIntersectionBoundPos;
                     IntersectionPoints.Add(leftIntersectionBoundPos);
                 }
 
@@ -130,7 +130,7 @@ namespace experimental
                         }
                     }
 
-                    //Node.RightBound[segment.Road] = rightIntersectionBoundPos;
+                    Node.RightBound[segment.Road] = rightIntersectionBoundPos;
                     IntersectionPoints.Add(rightIntersectionBoundPos);
                 }
             }
