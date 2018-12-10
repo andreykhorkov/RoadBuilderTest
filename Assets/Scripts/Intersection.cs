@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace experimental
@@ -20,17 +21,16 @@ namespace experimental
 
         public Node PointA { get; }
         public Node PointB { get; }
-        public Road Road { get; }
         public Bound LeftBound { get; }
         public Bound RightBound { get; }
 
-        public RoadSegment(Node pointA, Node pointB, Road road)
+        public RoadSegment(Node pointA, Node pointB)
         {
             PointA = pointA;
             PointB = pointB;
-            Road = road;
-            LeftBound = new Bound(pointA.LeftBound[road], pointB.LeftBound[road]);
-            RightBound = new Bound(pointA.RightBound[road], pointB.RightBound[road]);
+            var tuple = new Tuple<Node, Node>(pointA, pointB);
+            LeftBound = new Bound(pointA.BoundPoints[tuple].LeftBoundPoint, pointB.BoundPoints[tuple].LeftBoundPoint);
+            RightBound = new Bound(pointA.BoundPoints[tuple].RightBoundPoint, pointB.BoundPoints[tuple].RightBoundPoint);
         }
     }
 

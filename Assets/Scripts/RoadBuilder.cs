@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace experimental
@@ -92,35 +93,15 @@ namespace experimental
                         var nodeIndex = indexRoadPair.Key;
                         var prevIndex = nodeIndex - 1;
                         var nextIndex = nodeIndex + 1;
-                        Vector3 currentNodeLeftPos;
-                        Vector3 currentNodeRightPos;
-
-                        if (!road.Nodes[nodeIndex].LeftBound.TryGetValue(road, out currentNodeLeftPos)
-                            || !road.Nodes[nodeIndex].RightBound.TryGetValue(road, out currentNodeRightPos))
-                        {
-                            continue;
-                        }
 
                         if (prevIndex >= 0)
                         {
-                            var prevNodeLeftPos = road.Nodes[prevIndex].LeftBound[road];
-                            var prevNodeRightPos = road.Nodes[prevIndex].RightBound[road];
-
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[prevIndex], road.Nodes[nodeIndex], road));
+                            roadSegmentsList.Add(new RoadSegment(road.Nodes[prevIndex], road.Nodes[nodeIndex]));
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
-                            Vector3 nextNodeLeftPos;
-                            Vector3 nextNodeRightPos;
-
-                            if (!road.Nodes[nextIndex].LeftBound.TryGetValue(road, out nextNodeLeftPos)
-                                || !road.Nodes[nextIndex].RightBound.TryGetValue(road, out nextNodeRightPos))
-                            {
-                                continue;
-                            }
-
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[nextIndex], road.Nodes[nodeIndex], road));
+                            roadSegmentsList.Add(new RoadSegment(road.Nodes[nodeIndex], road.Nodes[nextIndex]));
                         }
                     }
                     
@@ -177,29 +158,29 @@ namespace experimental
         {
             BuildRoads();
 
-            foreach (var intersection in Intersections)
-            {
-                Gizmos.color = Color.white;
-                Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
-                Gizmos.color = Color.yellow;
+            //foreach (var intersection in Intersections)
+            //{
+            //    Gizmos.color = Color.white;
+            //    Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
+            //    Gizmos.color = Color.yellow;
 
-                foreach (var point in intersection.IntersectionPoints)
-                {
-                    Gizmos.DrawSphere(point, 0.5f);
-                }
+            //    foreach (var point in intersection.IntersectionPoints)
+            //    {
+            //        Gizmos.DrawSphere(point, 0.5f);
+            //    }
 
-                Gizmos.color = Color.cyan;
+            //    Gizmos.color = Color.cyan;
 
-                foreach (var pos in intersection.Node.LeftBound.Values)
-                {
-                    Gizmos.DrawSphere(pos, 0.5f);
-                }
+            //    foreach (var pos in intersection.Node.LeftBoundPoints.Values)
+            //    {
+            //        Gizmos.DrawSphere(pos, 0.5f);
+            //    }
 
-                foreach (var pos in intersection.Node.RightBound.Values)
-                {
-                    Gizmos.DrawSphere(pos, 0.5f);
-                }
-            }
+            //    foreach (var pos in intersection.Node.RightBoundPoints.Values)
+            //    {
+            //        Gizmos.DrawSphere(pos, 0.5f);
+            //    }
+            //}
 
             DrawIntersectionBounds();
         }
@@ -231,42 +212,57 @@ namespace experimental
 
             for (int i = 0; i < nodes.Length; i++)
             {
-                Gizmos.color = Color.blue;
-
                 var pointA = nodes[i].Position;
                 var node = nodes[i];
+                Node prevNode = null;
+                Node nextNode = null;
+
+                if (i > 0)
+                {
+                    prevNode = nodes[i - 1];
+                }
 
                 if (i < nodes.Length - 1)
                 {
-
-                    var pointB = nodes[i + 1].Position;
+                    nextNode = nodes[i + 1];
+                    var pointB = nextNode.Position;
                     var direction = pointB - pointA;
                     perp = Vector3.Cross(direction, Vector3.up).normalized;
-
-                    Gizmos.color = Color.magenta;
-                    Gizmos.DrawLine(pointA, pointB);
                 }
 
                 var avg = (prevPerp + perp).normalized;
                 var cos = Vector3.Dot(avg, perp);
-                node.LeftBound[road] = pointA + avg * road.Width * 0.5f / cos;
-                node.RightBound[road] = pointA - avg * road.Width * 0.5f / cos;
-                Gizmos.DrawSphere(node.LeftBound[road], 0.25f);
-                Gizmos.DrawSphere(node.RightBound[road], 0.25f);
-                
-                prevPerp = perp;
-
-                var prevLeftBound = node.LeftBound[road];
-                var prevRightBound = node.RightBound[road];
-
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawSphere(prevLeftBound, 0.3f);
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawSphere(prevRightBound, 0.3f);
+                var leftBoundPosition = pointA + avg * road.Width * 0.5f / cos;
+                var rightBoundPosition = pointA - avg * road.Width * 0.5f / cos;
 
                 Gizmos.color = Color.green;
-                Gizmos.DrawLine(node.LeftBound[road], node.RightBound[road]);
+                Gizmos.DrawLine(leftBoundPosition, rightBoundPosition);
+
+                if (prevNode != null)
+                {
+                    node.BoundPoints[new Tuple<Node, Node>(prevNode, node)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                }
+
+                if (nextNode != null)
+                {
+                    node.BoundPoints[new Tuple<Node, Node>(node, nextNode)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                }
+
+                prevPerp = perp;
+            }
+
+
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                Gizmos.color = Color.red;
+
+                foreach (var point in nodes[i].BoundPoints)
+                {
+                    Gizmos.DrawSphere(point.Value.LeftBoundPoint, 0.3f);
+                    Gizmos.DrawSphere(point.Value.RightBoundPoint, 0.3f);
+                }
             }
         }
+
     }
 }
