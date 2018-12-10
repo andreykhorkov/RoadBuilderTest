@@ -19,39 +19,38 @@ namespace experimental
         {
             Gizmos.color = Color.cyan;
 
-            //for (int i = 0; i < nodes.Length; i++)
-            //{
-            //    var node = nodes[i];
-            //    NodeBoundPoints prevNodeBoundPoints;
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                var node = nodes[i];
+                NodeBoundPoints prevNodeBoundPoints;
+                NodeBoundPoints currentNodeBoundPoints;
+                NodeBoundPoints nextNodeBoundPoints;
 
-            //    if (i > 0)
-            //    {
-            //        var prevNode = nodes[i - 1];
-            //        var tuple = new Tuple<Node, Node>(prevNode, node);
+                if (i > 0)
+                {
+                    var prevNode = nodes[i - 1];
+                    var tuple = new Tuple<Node, Node>(prevNode, node);
 
-            //        if (node.BoundPoints.TryGetValue(tuple, out prevNodeBoundPoints))
-            //        {
-            //            prevNodeBoundPoints.LeftBoundPoint
-            //        }
-            //    }
+                    if (prevNode.BoundPoints.TryGetValue(tuple, out prevNodeBoundPoints) && node.BoundPoints.TryGetValue(tuple, out currentNodeBoundPoints))
+                    {
+                        Gizmos.DrawLine(prevNodeBoundPoints.LeftBoundPoint, currentNodeBoundPoints.LeftBoundPoint);
+                        Gizmos.DrawLine(prevNodeBoundPoints.RightBoundPoint, currentNodeBoundPoints.RightBoundPoint);
+                    }
+                }
 
-            //    var nextNode = nodes[i + 1];
+                if (i < nodes.Length - 1)
+                {
+                    var nextNode = nodes[i + 1];
 
-            //    Vector3 currentLeftBound;
-            //    Vector3 currentRightBound;
-            //    Vector3 nextLeftBound;
-            //    Vector3 nextRightBound;
+                    var tuple = new Tuple<Node, Node>(nextNode, node);
 
-            //    if (node.BoundPoints.TryGetValue(this, out currentLeftBound) && nextNode.LeftBoundPoints.TryGetValue(this, out nextLeftBound))
-            //    {
-            //        Gizmos.DrawLine(currentLeftBound, nextLeftBound);
-            //    }
-
-            //    if (node.RightBoundPoints.TryGetValue(this, out currentRightBound) && nextNode.RightBoundPoints.TryGetValue(this, out nextRightBound))
-            //    {
-            //        Gizmos.DrawLine(currentRightBound, nextRightBound);
-            //    }
-            //}
+                    if (node.BoundPoints.TryGetValue(tuple, out nextNodeBoundPoints) && nextNode.BoundPoints.TryGetValue(tuple, out currentNodeBoundPoints))
+                    {
+                        Gizmos.DrawLine(currentNodeBoundPoints.LeftBoundPoint, nextNodeBoundPoints.LeftBoundPoint);
+                        Gizmos.DrawLine(currentNodeBoundPoints.RightBoundPoint, nextNodeBoundPoints.RightBoundPoint);
+                    }
+                }
+            }
         }
     }
 }
