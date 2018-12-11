@@ -125,30 +125,10 @@ namespace experimental
             }
         }
 
-        private static void FindStlnPoint(IEnumerable<RoadSegment> segments, Intersection intersection)
-        {
-            foreach (var seg in segments)
-            {
-                if (seg.LeftBound.BoundIntersectionPoints.Count > 0)
-                {
-                    continue;
-                }
-
-                var point = (seg.LeftBound.BorderPointA - intersection.Node.Position).sqrMagnitude <
-                            (seg.LeftBound.BorderPointB - intersection.Node.Position).sqrMagnitude
-                    ? seg.PointA
-                    : seg.PointB;
-
-                intersection.IntersectionPoints.Add(point.Position);
-            }
-        }
-
         private void FindStandalonePoints()
         {
             foreach (var intersection in Intersections)
             {
-                FindStlnPoint(intersection.RoadSegments, intersection);
-
                 intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
         }
@@ -159,9 +139,8 @@ namespace experimental
 
             foreach (var intersection in Intersections)
             {
-                Gizmos.color = Color.white;
-                Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
-                Gizmos.color = Color.yellow;
+                Gizmos.color = Color.yellow; 
+                Gizmos.DrawSphere(intersection.Node.Position, 0.2f);
 
                 foreach (var point in intersection.IntersectionPoints)
                 {

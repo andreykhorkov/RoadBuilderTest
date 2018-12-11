@@ -153,6 +153,19 @@ namespace experimental
             if (boundA.BoundIntersectionPoints.Count == 0 && boundB.BoundIntersectionPoints.Count == 0 && !CheckPoint(point, boundA) && !CheckPoint(point, boundB))
             {
                 IntersectionPoints.Add(point);
+
+                foreach (var boundPoints in Node.BoundPoints.Values)
+                {
+                    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.LeftBoundPoint - point), 0))
+                    {
+                        boundPoints.LeftBoundPoint = point;
+                    }
+
+                    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.RightBoundPoint - point), 0))
+                    {
+                        boundPoints.RightBoundPoint = point;
+                    }
+                }
             }
         }
 
