@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace experimental
@@ -45,7 +46,18 @@ namespace experimental
         [SerializeField] private Road[] roads;
 
         public Dictionary<Node, List<KeyValuePair<int, Road>>> CheckedNodes = new Dictionary<Node, List<KeyValuePair<int, Road>>>();
-        public List<Intersection> Intersections = new List<Intersection>();
+        public Dictionary<Node, Intersection> Intersections = new Dictionary<Node, Intersection>();
+
+        void Start()
+        {
+            BuildRoads();
+            foreach (var road in roads)
+            {
+                
+            }
+
+            CreateRoadMesh(roads[0], roads[0].name);
+        }
 
         private void FindIntersections()
         {
@@ -104,7 +116,7 @@ namespace experimental
                         }
                     }
                     
-                    Intersections.Add(new Intersection(roadSegmentsList, node));
+                    Intersections.Add(node, new Intersection(roadSegmentsList, node));
                 }
             }
         }
@@ -127,7 +139,7 @@ namespace experimental
 
         private void FindStandalonePoints()
         {
-            foreach (var intersection in Intersections)
+            foreach (var intersection in Intersections.Values)
             {
                 intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
@@ -137,7 +149,7 @@ namespace experimental
         {
             BuildRoads();
 
-            foreach (var intersection in Intersections)
+            foreach (var intersection in Intersections.Values)
             {
                 Gizmos.color = Color.yellow; 
                 Gizmos.DrawSphere(intersection.Node.Position, 0.2f);
@@ -163,7 +175,7 @@ namespace experimental
         {
             Gizmos.color = Color.red;
 
-            foreach (var intersection in Intersections)
+            foreach (var intersection in Intersections.Values)
             {
                 for (int i = 0; i < intersection.IntersectionPoints.Count - 1; i++)
                 {
@@ -209,8 +221,8 @@ namespace experimental
                 var leftBoundPosition = pointA + avg * road.Width * 0.5f / cos;
                 var rightBoundPosition = pointA - avg * road.Width * 0.5f / cos;
 
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(leftBoundPosition, rightBoundPosition);
+                //Gizmos.color = Color.green;
+                //Gizmos.DrawLine(leftBoundPosition, rightBoundPosition);
 
                 if (prevNode != null)
                 {
@@ -226,17 +238,117 @@ namespace experimental
             }
 
 
-            for (int i = 0; i < nodes.Length; i++)
-            {
-                Gizmos.color = Color.red;
+            //for (int i = 0; i < nodes.Length; i++)
+            //{
+            //    Gizmos.color = Color.red;
 
-                foreach (var point in nodes[i].BoundPoints)
-                {
-                    Gizmos.DrawSphere(point.Value.LeftBoundPoint, 0.3f);
-                    Gizmos.DrawSphere(point.Value.RightBoundPoint, 0.3f);
-                }
-            }
+            //    foreach (var point in nodes[i].BoundPoints)
+            //    {
+            //        Gizmos.DrawSphere(point.Value.LeftBoundPoint, 0.3f);
+            //        Gizmos.DrawSphere(point.Value.RightBoundPoint, 0.3f);
+            //    }
+            //}
         }
 
+        private void CreateRoadMesh(Road road, string name)
+        {
+            if (road.Nodes.Length < 2)
+            {
+                Debug.Log($"{road.name} has less than 2 nodes");
+                return;
+            }
+
+            var go = new GameObject(name);
+            go.AddComponent<MeshRenderer>();
+            var mf = go.AddComponent<MeshFilter>();
+
+            var vertices = new Vector3[road.Nodes.Length * 2];
+            var triangles = new int[3 * 2 * (road.Nodes.Length - 1)];
+            var uvs = new Vector2[vertices.Length];
+            var vertexIndex = 0;
+            var triIndex = 0;
+
+            for (int nodeIndex = 0; nodeIndex < road.Nodes.Length; nodeIndex++)
+            {
+                var node = road.Nodes[nodeIndex];
+
+                if (Intersections.ContainsKey(node))
+                {
+                    Debug.Log(node);
+                }
+
+
+                //var node = road.Nodes[nodeIndex];
+                //var prevIndex = nodeIndex - 1;
+                //var nextIndex = nodeIndex + 1;
+                //Tuple<Node, Node> tupleAB = null;
+                //Tuple<Node, Node> tupleBC = null;
+
+                //if (prevIndex >= 0)
+                //{
+                //    var prevNode = road.Nodes[prevIndex];
+                //    tupleAB = new Tuple<Node, Node>(prevNode, node);
+                //}
+
+                //if (nextIndex <= road.Nodes.Length - 1)
+                //{
+                //    var nextNode = road.Nodes[nextIndex];
+                //    tupleBC = new Tuple<Node, Node>(node, nextNode);
+                //}
+
+                //if (tupleAB != null)
+                //{
+                //    Test(node, tupleAB, vertices, ref vertexIndex, nodeIndex, road, uvs, triangles, ref triIndex);
+                //}
+
+                //if (tupleBC != null)
+                //{
+                //    Test(node, tupleBC, vertices, ref vertexIndex, nodeIndex, road, uvs, triangles, ref triIndex);
+                //}
+            }
+
+            var mesh = new Mesh
+            {
+                vertices = vertices,
+                triangles = triangles,
+                uv = uvs
+            };
+
+            mf.mesh = mesh;
+        }
+
+        private static bool Test(Node node, Tuple<Node, Node> tuple, Vector3[] vertices, ref int vertexIndex, int nodeIndex, Road road, Vector2[] uvs, int[] triangles, ref int triIndex)
+        {
+            NodeBoundPoints boundPoints;
+
+            if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
+            {
+                Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
+                return false;
+            }
+
+            vertices[vertexIndex] = boundPoints.LeftBoundPoint;
+            vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
+
+            var completionPercent = nodeIndex / (float)(road.Nodes.Length - 1);
+            var v = 1 - Mathf.Abs(2 * completionPercent - 1);
+            uvs[vertexIndex] = new Vector2(0, v);
+            uvs[vertexIndex + 1] = new Vector2(1, v);
+
+            if (nodeIndex < road.Nodes.Length - 1)
+            {
+                triangles[triIndex] = vertexIndex;
+                triangles[triIndex + 1] = vertexIndex + 2;
+                triangles[triIndex + 2] = vertexIndex + 1;
+                triangles[triIndex + 3] = vertexIndex + 2;
+                triangles[triIndex + 4] = vertexIndex + 3;
+                triangles[triIndex + 5] = vertexIndex + 1;
+            }
+
+            triIndex += 6;
+            vertexIndex += 2;
+
+            return true;
+        }
     }
 }

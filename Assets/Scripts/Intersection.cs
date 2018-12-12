@@ -90,7 +90,7 @@ namespace experimental
         {
             foreach (var segment in segments)
             {
-                var outerNodePosition = segment.PointA == Node ? segment.PointB.Position : segment.PointA.Position;
+                var outerNode = segment.PointA == Node ? segment.PointB : segment.PointA;
                 var minSqrDist = float.MaxValue;
                 var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
 
@@ -100,7 +100,7 @@ namespace experimental
 
                     foreach (var point in segment.LeftBound.BoundIntersectionPoints)
                     {
-                        var sqrDist = Vector3.SqrMagnitude(outerNodePosition - point);
+                        var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
                         if (sqrDist < minSqrDist)
                         {
@@ -120,7 +120,7 @@ namespace experimental
 
                     foreach (var point in segment.RightBound.BoundIntersectionPoints)
                     {
-                        var sqrDist = Vector3.SqrMagnitude(outerNodePosition - point);
+                        var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
                         if (sqrDist < minSqrDist)
                         {
