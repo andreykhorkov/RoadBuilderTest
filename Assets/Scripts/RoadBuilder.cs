@@ -53,10 +53,8 @@ namespace experimental
             BuildRoads();
             foreach (var road in roads)
             {
-                
+                CreateRoadMesh(road, road.name);
             }
-
-            CreateRoadMesh(roads[0], roads[0].name);
         }
 
         private void FindIntersections()
@@ -250,7 +248,29 @@ namespace experimental
             //}
         }
 
-        private void CreateRoadMesh(Road road, string name)
+        private List<List<Node>> GetSubRoads(Road road)
+        {
+            var subRoads = new List<List<Node>>();
+            var subRoad = new List<Node>();
+
+            for (int i = 0; i < road.Nodes.Length; i++)
+            {
+                var node = road.Nodes[i];
+                subRoad.Add(node);
+
+                if (Intersections.ContainsKey(node))
+                {
+                    subRoads.Add(subRoad);
+                    subRoad = new List<Node> { node };
+                }
+            }
+
+            subRoads.Add(subRoad);
+
+            return subRoads;
+        }
+
+        private void CreateRoadMesh(Road road, string subRoadName)
         {
             if (road.Nodes.Length < 2)
             {
@@ -258,53 +278,66 @@ namespace experimental
                 return;
             }
 
+            var subRoads = GetSubRoads(road);
+            for (int i = 0; i < subRoads.Count; i++)
+            {
+                CreateSubRoadMesh(subRoads[i], $"{subRoadName}_{i}");
+            } 
+        }
+
+        private static void CreateSubRoadMesh(IReadOnlyList<Node> subRoad, string name)
+        {
             var go = new GameObject(name);
             go.AddComponent<MeshRenderer>();
             var mf = go.AddComponent<MeshFilter>();
 
-            var vertices = new Vector3[road.Nodes.Length * 2];
-            var triangles = new int[3 * 2 * (road.Nodes.Length - 1)];
+            var vertices = new Vector3[subRoad.Count * 2];
+            var triangles = new int[3 * 2 * (subRoad.Count - 1)];
             var uvs = new Vector2[vertices.Length];
             var vertexIndex = 0;
             var triIndex = 0;
+            var node = subRoad[0];
+            var nextNode = subRoad[1];
+            var tuple = new Tuple<Node, Node>(node, nextNode);
 
-            for (int nodeIndex = 0; nodeIndex < road.Nodes.Length; nodeIndex++)
+            for (int nodeIndex = 0; nodeIndex < subRoad.Count; nodeIndex++)
             {
-                var node = road.Nodes[nodeIndex];
+                node = subRoad[nodeIndex];
 
-                if (Intersections.ContainsKey(node))
+                if (nodeIndex < subRoad.Count - 1)
                 {
-                    Debug.Log(node);
+                    nextNode = subRoad[nodeIndex + 1];
+                    tuple = new Tuple<Node, Node>(node, nextNode);
                 }
 
+                NodeBoundPoints boundPoints;
 
-                //var node = road.Nodes[nodeIndex];
-                //var prevIndex = nodeIndex - 1;
-                //var nextIndex = nodeIndex + 1;
-                //Tuple<Node, Node> tupleAB = null;
-                //Tuple<Node, Node> tupleBC = null;
+                if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
+                {
+                    Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
+                    return;
+                }
 
-                //if (prevIndex >= 0)
-                //{
-                //    var prevNode = road.Nodes[prevIndex];
-                //    tupleAB = new Tuple<Node, Node>(prevNode, node);
-                //}
+                vertices[vertexIndex] = boundPoints.LeftBoundPoint;
+                vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
 
-                //if (nextIndex <= road.Nodes.Length - 1)
-                //{
-                //    var nextNode = road.Nodes[nextIndex];
-                //    tupleBC = new Tuple<Node, Node>(node, nextNode);
-                //}
+                var completionPercent = nodeIndex / (float)(subRoad.Count - 1);
+                var v = 1 - Mathf.Abs(2 * completionPercent - 1);
+                uvs[vertexIndex] = new Vector2(0, v);
+                uvs[vertexIndex + 1] = new Vector2(1, v);
 
-                //if (tupleAB != null)
-                //{
-                //    Test(node, tupleAB, vertices, ref vertexIndex, nodeIndex, road, uvs, triangles, ref triIndex);
-                //}
+                if (nodeIndex < subRoad.Count - 1)
+                {
+                    triangles[triIndex] = vertexIndex;
+                    triangles[triIndex + 1] = vertexIndex + 2;
+                    triangles[triIndex + 2] = vertexIndex + 1;
+                    triangles[triIndex + 3] = vertexIndex + 2;
+                    triangles[triIndex + 4] = vertexIndex + 3;
+                    triangles[triIndex + 5] = vertexIndex + 1;
+                }
 
-                //if (tupleBC != null)
-                //{
-                //    Test(node, tupleBC, vertices, ref vertexIndex, nodeIndex, road, uvs, triangles, ref triIndex);
-                //}
+                triIndex += 6;
+                vertexIndex += 2;
             }
 
             var mesh = new Mesh
