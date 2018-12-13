@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace experimental
 {
     public class ClockwiseComparer : IComparer<Vector3>
     {
-        public Vector3 origin { get; set; }
+        public Vector3 Origin { get; set; }
 
         public ClockwiseComparer(Vector3 origin)
         {
-            this.origin = origin;
+            Origin = origin;
         }
 
         public int Compare(Vector3 first, Vector3 second)
         {
-            return IsClockwise(first, second, origin);
+            return IsClockwise(first, second, Origin);
         }
 
         public static int IsClockwise(Vector3 first, Vector3 second, Vector3 origin)
@@ -24,11 +23,11 @@ namespace experimental
             if (first == second)
                 return 0;
 
-            Vector3 firstOffset = first - origin;
-            Vector3 secondOffset = second - origin;
+            var firstOffset = first - origin;
+            var secondOffset = second - origin;
 
-            float angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
-            float angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
+            var angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
+            var angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
 
             if (angle1 < angle2)
                 return -1;
@@ -36,8 +35,42 @@ namespace experimental
             if (angle1 > angle2)
                 return 1;
 
-            // Check to see which point is closest
-            return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? -1 : 1;
+            return firstOffset.sqrMagnitude < secondOffset.sqrMagnitude ? -1 : 1;
+        }
+    }
+
+    public class ClockwiseNodeComparer : IComparer<Node>
+    {
+        public Node Origin { get; set; }
+
+        public ClockwiseNodeComparer(Node origin)
+        {
+            Origin = origin;
+        }
+
+        public int Compare(Node first, Node second)
+        {
+            return IsClockwise(first, second, Origin);
+        }
+
+        public static int IsClockwise(Node first, Node second, Node origin)
+        {
+            if (first == second)
+                return 0;
+
+            var firstOffset = first.Position - origin.Position;
+            var secondOffset = second.Position - origin.Position;
+
+            var angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
+            var angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
+
+            if (angle1 < angle2)
+                return -1;
+
+            if (angle1 > angle2)
+                return 1;
+
+            return firstOffset.sqrMagnitude < secondOffset.sqrMagnitude ? -1 : 1;
         }
     }
 
@@ -51,10 +84,7 @@ namespace experimental
         void Start()
         {
             BuildRoads();
-            foreach (var road in roads)
-            {
-                CreateRoadMesh(road, road.name);
-            }
+            CreateRoadMeshes();
         }
 
         private void FindIntersections()
@@ -93,8 +123,6 @@ namespace experimental
 
                 if (roadList.Count > 1)
                 {
-                    var roadSegmentsList = new List<RoadSegment>();
-
                     for (int i = 0; i < roadList.Count; i++)
                     {
                         var indexRoadPair = roadList[i];
@@ -105,16 +133,18 @@ namespace experimental
 
                         if (prevIndex >= 0)
                         {
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[prevIndex], road.Nodes[nodeIndex]));
+                            var tuple = new Tuple<Node, Node>(road.Nodes[prevIndex], node);
+                            node.NodeDataDict[tuple].Segment = new RoadSegment(road.Nodes[prevIndex], node);
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[nodeIndex], road.Nodes[nextIndex]));
+                            var tuple = new Tuple<Node, Node>(node, road.Nodes[nextIndex]);
+                            node.NodeDataDict[tuple].Segment = new RoadSegment(node, road.Nodes[nextIndex]);
                         }
                     }
                     
-                    Intersections.Add(node, new Intersection(roadSegmentsList, node));
+                    Intersections.Add(node, new Intersection(node));
                 }
             }
         }
@@ -123,7 +153,40 @@ namespace experimental
         {
             SetRoadBounds();
             FindIntersections();
-            FindStandalonePoints();
+            SetPerpendiculars();
+            FindIntersectionsBoundPoints();
+            SortIntersectionPointsClockwise();
+        }
+
+        private void CreateRoadMeshes()
+        {
+            foreach (var road in roads)
+            {
+                CreateRoadMesh(road, road.name);
+            }
+        }
+
+        private void SetPerpendiculars()
+        {
+            foreach (var intersection in Intersections)
+            {
+                foreach (var nodeData in intersection.Value.Node.NodeDataDict)
+                {
+                    var outerPoint = intersection.Value.Node == nodeData.Key.Item1
+                        ? nodeData.Key.Item2
+                        : nodeData.Key.Item1;
+
+                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionBoundPoints);
+                }
+            }
+        }
+
+        private void FindIntersectionsBoundPoints()
+        {
+            foreach (var intersection in Intersections)
+            {
+                intersection.Value.FindIntersectionBoundPoints();
+            }
         }
 
         private void SetRoadBounds()
@@ -135,56 +198,94 @@ namespace experimental
             }
         }
 
-        private void FindStandalonePoints()
+        private void SortIntersectionPointsClockwise()
         {
             foreach (var intersection in Intersections.Values)
             {
-                intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
+                intersection.IntersectionBoundPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
         }
 
         void OnDrawGizmos()
         {
             BuildRoads();
+            DrawRoadSegments();
+            DrawIntersectionBoundPoints();
+            DrawIntersectionBounds();
+        }
 
-            foreach (var intersection in Intersections.Values)
+        private void DrawIntersectionBoundPoints()
+        {
+            Gizmos.color = Color.black;
+
+            foreach (var intersection in Intersections)
             {
-                Gizmos.color = Color.yellow; 
-                Gizmos.DrawSphere(intersection.Node.Position, 0.2f);
-
-                foreach (var point in intersection.IntersectionPoints)
+                foreach (var point in intersection.Value.IntersectionBoundPoints)
                 {
-                    Gizmos.DrawSphere(point, 0.5f);
-                }
-
-                Gizmos.color = Color.cyan;
-
-                foreach (var boundPoints in intersection.Node.BoundPoints.Values)
-                {
-                    Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
-                    Gizmos.DrawSphere(boundPoints.RightBoundPoint, 0.5f);
+                    Gizmos.DrawSphere(point, 0.3f);
                 }
             }
+        }
 
-            DrawIntersectionBounds();
+        private void DrawRoadSegments()
+        {
+            foreach (var road in roads)
+            {
+                Node prevNode = null;
+
+                foreach (var roadNode in road.Nodes)
+                {
+                    foreach (var nodeData in roadNode.NodeDataDict)
+                    {
+                        Gizmos.color = Color.white;
+                        Gizmos.DrawSphere(nodeData.Value.Node.Position, 0.3f);
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawSphere(nodeData.Value.LeftBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawSphere(nodeData.Value.RightBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.cyan;
+                        Gizmos.DrawLine(nodeData.Key.Item1.Position, nodeData.Key.Item2.Position);
+
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawLine(nodeData.Value.LeftBoundPoint, nodeData.Value.RightBoundPoint);
+                    }
+
+                    if (prevNode != null)
+                    {
+                        var tuple = new Tuple<Node, Node>(prevNode, roadNode);
+                        var prevRoadData = prevNode.NodeDataDict[tuple];
+                        var currentNodeData = roadNode.NodeDataDict[tuple];
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawLine(prevRoadData.LeftBoundPoint, currentNodeData.LeftBoundPoint);
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawLine(prevRoadData.RightBoundPoint, currentNodeData.RightBoundPoint);
+                    }
+
+                    prevNode = roadNode;
+                }
+            }
         }
 
         private void DrawIntersectionBounds()
         {
-            Gizmos.color = Color.red;
+            Gizmos.color = Color.yellow;
 
             foreach (var intersection in Intersections.Values)
             {
-                for (int i = 0; i < intersection.IntersectionPoints.Count - 1; i++)
+                for (int i = 0; i < intersection.IntersectionBoundPoints.Count - 1; i++)
                 {
-                    var point = intersection.IntersectionPoints[i];
-                    var nextPoint = intersection.IntersectionPoints[i + 1];
+                    var point = intersection.IntersectionBoundPoints[i];
+                    var nextPoint = intersection.IntersectionBoundPoints[i + 1];
 
                     Gizmos.DrawLine(point, nextPoint);
                 }
 
-                if(intersection.IntersectionPoints.Count - 1 > 0)   
-                    Gizmos.DrawLine(intersection.IntersectionPoints[0], intersection.IntersectionPoints[intersection.IntersectionPoints.Count - 1]);
+                if(intersection.IntersectionBoundPoints.Count > 0)   
+                    Gizmos.DrawLine(intersection.IntersectionBoundPoints[0], intersection.IntersectionBoundPoints[intersection.IntersectionBoundPoints.Count - 1]);
             }
         }
 
@@ -219,33 +320,18 @@ namespace experimental
                 var leftBoundPosition = pointA + avg * road.Width * 0.5f / cos;
                 var rightBoundPosition = pointA - avg * road.Width * 0.5f / cos;
 
-                //Gizmos.color = Color.green;
-                //Gizmos.DrawLine(leftBoundPosition, rightBoundPosition);
-
                 if (prevNode != null)
                 {
-                    node.BoundPoints[new Tuple<Node, Node>(prevNode, node)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(prevNode, node)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
                 }
 
                 if (nextNode != null)
                 {
-                    node.BoundPoints[new Tuple<Node, Node>(node, nextNode)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(node, nextNode)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
                 }
 
                 prevPerp = perp;
             }
-
-
-            //for (int i = 0; i < nodes.Length; i++)
-            //{
-            //    Gizmos.color = Color.red;
-
-            //    foreach (var point in nodes[i].BoundPoints)
-            //    {
-            //        Gizmos.DrawSphere(point.Value.LeftBoundPoint, 0.3f);
-            //        Gizmos.DrawSphere(point.Value.RightBoundPoint, 0.3f);
-            //    }
-            //}
         }
 
         private List<List<Node>> GetSubRoads(Road road)
@@ -279,8 +365,14 @@ namespace experimental
             }
 
             var subRoads = GetSubRoads(road);
+
             for (int i = 0; i < subRoads.Count; i++)
             {
+                if (subRoads[i].Count < 2)
+                {
+                    continue;
+                }
+
                 CreateSubRoadMesh(subRoads[i], $"{subRoadName}_{i}");
             } 
         }
@@ -310,16 +402,16 @@ namespace experimental
                     tuple = new Tuple<Node, Node>(node, nextNode);
                 }
 
-                NodeBoundPoints boundPoints;
+                NodeData nodeData;
 
-                if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
+                if (!node.NodeDataDict.TryGetValue(tuple, out nodeData))
                 {
                     Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
                     return;
                 }
 
-                vertices[vertexIndex] = boundPoints.LeftBoundPoint;
-                vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
+                vertices[vertexIndex] = nodeData.LeftBoundPoint;
+                vertices[vertexIndex + 1] = nodeData.RightBoundPoint;
 
                 var completionPercent = nodeIndex / (float)(subRoad.Count - 1);
                 var v = 1 - Mathf.Abs(2 * completionPercent - 1);
@@ -348,40 +440,6 @@ namespace experimental
             };
 
             mf.mesh = mesh;
-        }
-
-        private static bool Test(Node node, Tuple<Node, Node> tuple, Vector3[] vertices, ref int vertexIndex, int nodeIndex, Road road, Vector2[] uvs, int[] triangles, ref int triIndex)
-        {
-            NodeBoundPoints boundPoints;
-
-            if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
-            {
-                Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
-                return false;
-            }
-
-            vertices[vertexIndex] = boundPoints.LeftBoundPoint;
-            vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
-
-            var completionPercent = nodeIndex / (float)(road.Nodes.Length - 1);
-            var v = 1 - Mathf.Abs(2 * completionPercent - 1);
-            uvs[vertexIndex] = new Vector2(0, v);
-            uvs[vertexIndex + 1] = new Vector2(1, v);
-
-            if (nodeIndex < road.Nodes.Length - 1)
-            {
-                triangles[triIndex] = vertexIndex;
-                triangles[triIndex + 1] = vertexIndex + 2;
-                triangles[triIndex + 2] = vertexIndex + 1;
-                triangles[triIndex + 3] = vertexIndex + 2;
-                triangles[triIndex + 4] = vertexIndex + 3;
-                triangles[triIndex + 5] = vertexIndex + 1;
-            }
-
-            triIndex += 6;
-            vertexIndex += 2;
-
-            return true;
         }
     }
 }
