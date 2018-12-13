@@ -103,13 +103,13 @@ namespace experimental
 
                         if (prevIndex >= 0)
                         {
-                            node.BoundPoints[new Tuple<Node, Node>(road.Nodes[prevIndex], node)].Segment =
+                            node.NodeDataDict[new Tuple<Node, Node>(road.Nodes[prevIndex], node)].Segment =
                                 new RoadSegment(road.Nodes[prevIndex], node);
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
-                            node.BoundPoints[new Tuple<Node, Node>(node, road.Nodes[nextIndex])].Segment =
+                            node.NodeDataDict[new Tuple<Node, Node>(node, road.Nodes[nextIndex])].Segment =
                                 new RoadSegment(node, road.Nodes[nextIndex]);
                         }
                     }
@@ -127,15 +127,15 @@ namespace experimental
 
             foreach (var intersection in Intersections)
             {
-                foreach (var boundPointKeyValue in intersection.Value.Node.BoundPoints)
+                foreach (var nodeData in intersection.Value.Node.NodeDataDict)
                 {
-                    var outerPoint = intersection.Value.Node == boundPointKeyValue.Key.Item1
-                        ? boundPointKeyValue.Key.Item2
-                        : boundPointKeyValue.Key.Item1;
+                    var outerPoint = intersection.Value.Node == nodeData.Key.Item1
+                        ? nodeData.Key.Item2
+                        : nodeData.Key.Item1;
 
-                    boundPointKeyValue.Value.SetIntersectionPerpendicularPoint(outerPoint);
-                    boundPointKeyValue.Value.IntersectionPerpendicular = Vector3.Cross(
-                        boundPointKeyValue.Key.Item1.Position - boundPointKeyValue.Key.Item2.Position, Vector3.down);
+                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint);
+                    nodeData.Value.IntersectionPerpendicular = Vector3.Cross(
+                        nodeData.Value.Segment.PointA.Position - nodeData.Value.Segment.PointB.Position, Vector3.down);
                 }
             }
         }
@@ -173,7 +173,7 @@ namespace experimental
 
                 Gizmos.color = Color.cyan;
 
-                foreach (var boundPoints in intersection.Node.BoundPoints.Values)
+                foreach (var boundPoints in intersection.Node.NodeDataDict.Values)
                 {
                     
                     Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
@@ -242,12 +242,12 @@ namespace experimental
 
                 if (prevNode != null)
                 {
-                    node.BoundPoints[new Tuple<Node, Node>(prevNode, node)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(prevNode, node)] = new NodeData(leftBoundPosition, rightBoundPosition);
                 }
 
                 if (nextNode != null)
                 {
-                    node.BoundPoints[new Tuple<Node, Node>(node, nextNode)] = new NodeBoundPoints(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(node, nextNode)] = new NodeData(leftBoundPosition, rightBoundPosition);
                 }
 
                 prevPerp = perp;
@@ -334,16 +334,16 @@ namespace experimental
                     tuple = new Tuple<Node, Node>(node, nextNode);
                 }
 
-                NodeBoundPoints boundPoints;
+                NodeData nodeData;
 
-                if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
+                if (!node.NodeDataDict.TryGetValue(tuple, out nodeData))
                 {
                     Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
                     return;
                 }
 
-                vertices[vertexIndex] = boundPoints.LeftBoundPoint;
-                vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
+                vertices[vertexIndex] = nodeData.LeftBoundPoint;
+                vertices[vertexIndex + 1] = nodeData.RightBoundPoint;
 
                 var completionPercent = nodeIndex / (float)(subRoad.Count - 1);
                 var v = 1 - Mathf.Abs(2 * completionPercent - 1);
@@ -372,40 +372,6 @@ namespace experimental
             };
 
             mf.mesh = mesh;
-        }
-
-        private static bool Test(Node node, Tuple<Node, Node> tuple, Vector3[] vertices, ref int vertexIndex, int nodeIndex, Road road, Vector2[] uvs, int[] triangles, ref int triIndex)
-        {
-            NodeBoundPoints boundPoints;
-
-            if (!node.BoundPoints.TryGetValue(tuple, out boundPoints))
-            {
-                Debug.Log($"can't find bound points for segment {tuple.Item1}:{tuple.Item2}");
-                return false;
-            }
-
-            vertices[vertexIndex] = boundPoints.LeftBoundPoint;
-            vertices[vertexIndex + 1] = boundPoints.RightBoundPoint;
-
-            var completionPercent = nodeIndex / (float)(road.Nodes.Length - 1);
-            var v = 1 - Mathf.Abs(2 * completionPercent - 1);
-            uvs[vertexIndex] = new Vector2(0, v);
-            uvs[vertexIndex + 1] = new Vector2(1, v);
-
-            if (nodeIndex < road.Nodes.Length - 1)
-            {
-                triangles[triIndex] = vertexIndex;
-                triangles[triIndex + 1] = vertexIndex + 2;
-                triangles[triIndex + 2] = vertexIndex + 1;
-                triangles[triIndex + 3] = vertexIndex + 2;
-                triangles[triIndex + 4] = vertexIndex + 3;
-                triangles[triIndex + 5] = vertexIndex + 1;
-            }
-
-            triIndex += 6;
-            vertexIndex += 2;
-
-            return true;
         }
     }
 }

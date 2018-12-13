@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace experimental
 {
-    public class NodeBoundPoints
+    public class NodeData
     {
         public Vector3 LeftBoundPoint { get; set; }
         public Vector3 RightBoundPoint { get; set; }
@@ -12,7 +12,7 @@ namespace experimental
         public Vector3 IntersectionPerpendicular { get; set; }
         public RoadSegment Segment { get; set; }
 
-        public NodeBoundPoints(Vector3 leftBoundPoint, Vector3 rightBoundPoint)
+        public NodeData(Vector3 leftBoundPoint, Vector3 rightBoundPoint)
         {
             LeftBoundPoint = leftBoundPoint;
             RightBoundPoint = rightBoundPoint;
@@ -31,7 +31,7 @@ namespace experimental
     {
         [SerializeField] private int id;
 
-        public Dictionary<Tuple<Node, Node>, NodeBoundPoints> BoundPoints = new Dictionary<Tuple<Node, Node>, NodeBoundPoints>();
+        public Dictionary<Tuple<Node, Node>, NodeData> NodeDataDict = new Dictionary<Tuple<Node, Node>, NodeData>();
         public Vector3 Position => transform.position;
         public int Id => id;
     }

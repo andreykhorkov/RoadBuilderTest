@@ -29,8 +29,8 @@ namespace experimental
             PointA = pointA;
             PointB = pointB;
             var tuple = new Tuple<Node, Node>(pointA, pointB);
-            LeftBound = new Bound(pointA.BoundPoints[tuple].LeftBoundPoint, pointB.BoundPoints[tuple].LeftBoundPoint);
-            RightBound = new Bound(pointA.BoundPoints[tuple].RightBoundPoint, pointB.BoundPoints[tuple].RightBoundPoint);
+            LeftBound = new Bound(pointA.NodeDataDict[tuple].LeftBoundPoint, pointB.NodeDataDict[tuple].LeftBoundPoint);
+            RightBound = new Bound(pointA.NodeDataDict[tuple].RightBoundPoint, pointB.NodeDataDict[tuple].RightBoundPoint);
         }
     }
 
@@ -46,9 +46,9 @@ namespace experimental
 
             IntersectionPoints = new List<Vector3>();
 
-            foreach (var boundPointsKeyValueA in node.BoundPoints)
+            foreach (var boundPointsKeyValueA in node.NodeDataDict)
             {
-                foreach (var boundPointsKeyValueB in node.BoundPoints)
+                foreach (var boundPointsKeyValueB in node.NodeDataDict)
                 {
                     if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
                     {
@@ -61,9 +61,9 @@ namespace experimental
                 }
             }
 
-            foreach (var boundPointsKeyValueA in node.BoundPoints)
+            foreach (var boundPointsKeyValueA in node.NodeDataDict)
             {
-                foreach (var boundPointsKeyValueB in node.BoundPoints)
+                foreach (var boundPointsKeyValueB in node.NodeDataDict)
                 {
                     if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
                     {
@@ -76,7 +76,7 @@ namespace experimental
                 }
             }
 
-            foreach (var boundPointsValue in node.BoundPoints.Values)
+            foreach (var boundPointsValue in node.NodeDataDict.Values)
             {
                 FilterSegmentIntersectionPoints(boundPointsValue.Segment);
             }
@@ -94,7 +94,7 @@ namespace experimental
 
                 foreach (var point in segment.LeftBound.BoundIntersectionPoints)
                 {
-                    var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
+                    var sqrDist = Vector3.SqrMagnitude(outerNode.NodeDataDict[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -103,7 +103,7 @@ namespace experimental
                     }
                 }
 
-                Node.BoundPoints[tuple].LeftBoundPoint = leftIntersectionBoundPos;
+                Node.NodeDataDict[tuple].LeftBoundPoint = leftIntersectionBoundPos;
                 IntersectionPoints.Add(leftIntersectionBoundPos);
             }
 
@@ -114,7 +114,7 @@ namespace experimental
 
                 foreach (var point in segment.RightBound.BoundIntersectionPoints)
                 {
-                    var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
+                    var sqrDist = Vector3.SqrMagnitude(outerNode.NodeDataDict[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -123,7 +123,7 @@ namespace experimental
                     }
                 }
 
-                Node.BoundPoints[tuple].RightBoundPoint = rightIntersectionBoundPos;
+                Node.NodeDataDict[tuple].RightBoundPoint = rightIntersectionBoundPos;
                 IntersectionPoints.Add(rightIntersectionBoundPos);
             }
         }
@@ -147,7 +147,7 @@ namespace experimental
             {
                 IntersectionPoints.Add(point);
 
-                foreach (var boundPoints in Node.BoundPoints.Values)
+                foreach (var boundPoints in Node.NodeDataDict.Values)
                 {
                     if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.LeftBoundPoint - point), 0))
                     {

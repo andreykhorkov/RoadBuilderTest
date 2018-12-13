@@ -22,19 +22,19 @@ namespace experimental
             for (int i = 0; i < nodes.Length; i++)
             {
                 var node = nodes[i];
-                NodeBoundPoints prevNodeBoundPoints;
-                NodeBoundPoints currentNodeBoundPoints;
-                NodeBoundPoints nextNodeBoundPoints;
+                NodeData prevNodeData;
+                NodeData currentNodeData;
+                NodeData nextNodeData;
 
                 if (i > 0)
                 {
                     var prevNode = nodes[i - 1];
                     var tuple = new Tuple<Node, Node>(prevNode, node);
 
-                    if (prevNode.BoundPoints.TryGetValue(tuple, out prevNodeBoundPoints) && node.BoundPoints.TryGetValue(tuple, out currentNodeBoundPoints))
+                    if (prevNode.NodeDataDict.TryGetValue(tuple, out prevNodeData) && node.NodeDataDict.TryGetValue(tuple, out currentNodeData))
                     {
-                        Gizmos.DrawLine(prevNodeBoundPoints.LeftBoundPoint, currentNodeBoundPoints.LeftBoundPoint);
-                        Gizmos.DrawLine(prevNodeBoundPoints.RightBoundPoint, currentNodeBoundPoints.RightBoundPoint);
+                        Gizmos.DrawLine(prevNodeData.LeftBoundPoint, currentNodeData.LeftBoundPoint);
+                        Gizmos.DrawLine(prevNodeData.RightBoundPoint, currentNodeData.RightBoundPoint);
                     }
                 }
 
@@ -44,10 +44,10 @@ namespace experimental
 
                     var tuple = new Tuple<Node, Node>(nextNode, node);
 
-                    if (node.BoundPoints.TryGetValue(tuple, out nextNodeBoundPoints) && nextNode.BoundPoints.TryGetValue(tuple, out currentNodeBoundPoints))
+                    if (node.NodeDataDict.TryGetValue(tuple, out nextNodeData) && nextNode.NodeDataDict.TryGetValue(tuple, out currentNodeData))
                     {
-                        Gizmos.DrawLine(currentNodeBoundPoints.LeftBoundPoint, nextNodeBoundPoints.LeftBoundPoint);
-                        Gizmos.DrawLine(currentNodeBoundPoints.RightBoundPoint, nextNodeBoundPoints.RightBoundPoint);
+                        Gizmos.DrawLine(currentNodeData.LeftBoundPoint, nextNodeData.LeftBoundPoint);
+                        Gizmos.DrawLine(currentNodeData.RightBoundPoint, nextNodeData.RightBoundPoint);
                     }
                 }
             }
