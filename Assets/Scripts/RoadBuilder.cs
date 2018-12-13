@@ -103,14 +103,14 @@ namespace experimental
 
                         if (prevIndex >= 0)
                         {
-                            node.NodeDataDict[new Tuple<Node, Node>(road.Nodes[prevIndex], node)].Segment =
-                                new RoadSegment(road.Nodes[prevIndex], node);
+                            var tuple = new Tuple<Node, Node>(road.Nodes[prevIndex], node);
+                            node.NodeDataDict[tuple].Segment = new RoadSegment(road.Nodes[prevIndex], node);
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
-                            node.NodeDataDict[new Tuple<Node, Node>(node, road.Nodes[nextIndex])].Segment =
-                                new RoadSegment(node, road.Nodes[nextIndex]);
+                            var tuple = new Tuple<Node, Node>(node, road.Nodes[nextIndex]);
+                            node.NodeDataDict[tuple].Segment = new RoadSegment(node, road.Nodes[nextIndex]);
                         }
                     }
                     
@@ -123,7 +123,6 @@ namespace experimental
         {
             SetRoadBounds();
             FindIntersections();
-            FindStandalonePoints();
 
             foreach (var intersection in Intersections)
             {
@@ -133,11 +132,12 @@ namespace experimental
                         ? nodeData.Key.Item2
                         : nodeData.Key.Item1;
 
-                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint);
-                    nodeData.Value.IntersectionPerpendicular = Vector3.Cross(
-                        nodeData.Value.Segment.PointA.Position - nodeData.Value.Segment.PointB.Position, Vector3.down);
+                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionPoints);
+                    
                 }
             }
+
+            SortIntersectionPointsClockwise();
         }
 
         private void SetRoadBounds()
@@ -149,7 +149,7 @@ namespace experimental
             }
         }
 
-        private void FindStandalonePoints()
+        private void SortIntersectionPointsClockwise()
         {
             foreach (var intersection in Intersections.Values)
             {
@@ -164,23 +164,22 @@ namespace experimental
             foreach (var intersection in Intersections.Values)
             {
                 Gizmos.color = Color.yellow; 
-                Gizmos.DrawSphere(intersection.Node.Position, 0.2f);
+                Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
 
                 foreach (var point in intersection.IntersectionPoints)
                 {
-                    Gizmos.DrawSphere(point, 0.5f);
+                    Gizmos.DrawSphere(point, 0.8f);
                 }
 
                 Gizmos.color = Color.cyan;
 
                 foreach (var boundPoints in intersection.Node.NodeDataDict.Values)
                 {
-                    
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawSphere(boundPoints.Suka, 0.3f);
+
                     Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
                     Gizmos.DrawSphere(boundPoints.RightBoundPoint, 0.5f);
-
-                    Gizmos.color = Color.yellow;
-                    Gizmos.DrawRay(boundPoints.IntersectionPerpendicularPoint, boundPoints.IntersectionPerpendicular);
                 }
             }
 
@@ -201,7 +200,7 @@ namespace experimental
                     Gizmos.DrawLine(point, nextPoint);
                 }
 
-                if(intersection.IntersectionPoints.Count - 1 > 0)   
+                if(intersection.IntersectionPoints.Count > 0)   
                     Gizmos.DrawLine(intersection.IntersectionPoints[0], intersection.IntersectionPoints[intersection.IntersectionPoints.Count - 1]);
             }
         }
@@ -242,12 +241,12 @@ namespace experimental
 
                 if (prevNode != null)
                 {
-                    node.NodeDataDict[new Tuple<Node, Node>(prevNode, node)] = new NodeData(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(prevNode, node)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
                 }
 
                 if (nextNode != null)
                 {
-                    node.NodeDataDict[new Tuple<Node, Node>(node, nextNode)] = new NodeData(leftBoundPosition, rightBoundPosition);
+                    node.NodeDataDict[new Tuple<Node, Node>(node, nextNode)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
                 }
 
                 prevPerp = perp;

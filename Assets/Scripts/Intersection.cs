@@ -174,13 +174,8 @@ namespace experimental
             return isPosOnSegment;
         }
 
-        private static Vector3 LineLineIntersection(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
+        public static Vector3 LineLineIntersection(Vector3 A, Vector3 B, Vector3 C, Vector3 D)
         {
-            var A = boundA.BorderPointA;
-            var B = boundA.BorderPointB;
-            var C = boundB.BorderPointA;
-            var D = boundB.BorderPointB;
-
             // Line AB represented as a1x + b1z = c1 
             var a1 = B.z - A.z;
             var b1 = A.x - B.x;
@@ -203,6 +198,16 @@ namespace experimental
             var x = (b2 * c1 - b1 * c2) / determinant;
             var z = (a1 * c2 - a2 * c1) / determinant;
             return new Vector3(x, 0, z);
+        }
+
+        public static Vector3 LineLineIntersection(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
+        {
+            var A = boundA.BorderPointA;
+            var B = boundA.BorderPointB;
+            var C = boundB.BorderPointA;
+            var D = boundB.BorderPointB;
+
+            return LineLineIntersection(A, B, C, D);
         }
     }
 }
