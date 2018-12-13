@@ -8,11 +8,22 @@ namespace experimental
     {
         public Vector3 LeftBoundPoint { get; set; }
         public Vector3 RightBoundPoint { get; set; }
+        public Vector3 IntersectionPerpendicularPoint { get; private set; }
+        public Vector3 IntersectionPerpendicular { get; set; }
+        public RoadSegment Segment { get; set; }
 
         public NodeBoundPoints(Vector3 leftBoundPoint, Vector3 rightBoundPoint)
         {
             LeftBoundPoint = leftBoundPoint;
             RightBoundPoint = rightBoundPoint;
+        }
+
+        public void SetIntersectionPerpendicularPoint(Node outerPoint)
+        {
+            var leftDist = Vector3.SqrMagnitude(outerPoint.Position - LeftBoundPoint);
+            var rightDist = Vector3.SqrMagnitude(outerPoint.Position - RightBoundPoint);
+
+            IntersectionPerpendicularPoint = leftDist < rightDist ? LeftBoundPoint : RightBoundPoint;
         }
     }
 

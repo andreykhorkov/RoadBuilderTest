@@ -40,98 +40,91 @@ namespace experimental
         public List<Vector3> IntersectionPoints;
         public Node Node { get; set; }
 
-        public Intersection(List<RoadSegment> roadSegments, Node node)
+        public Intersection(Node node)
         {
-            RoadSegments = roadSegments;
             Node = node;
 
             IntersectionPoints = new List<Vector3>();
 
-            for (int i = 0; i < roadSegments.Count; i++)
+            foreach (var boundPointsKeyValueA in node.BoundPoints)
             {
-                for (int j = 0; j < roadSegments.Count; j++)
+                foreach (var boundPointsKeyValueB in node.BoundPoints)
                 {
-                    if (i == j)
+                    if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
                     {
                         continue;
                     }
 
-                    var roadSegmentI = roadSegments[i];
-                    var roadSegmentJ = roadSegments[j];
-
-                    SetIntersectionPoint(roadSegmentI.LeftBound, roadSegmentJ.RightBound); 
-                    SetIntersectionPoint(roadSegmentI.LeftBound, roadSegmentJ.LeftBound); 
-                    SetIntersectionPoint(roadSegmentI.RightBound, roadSegmentJ.RightBound);
+                    SetIntersectionPoint(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.RightBound);
+                    SetIntersectionPoint(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.LeftBound);
+                    SetIntersectionPoint(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
                 }
             }
 
-            for (int i = 0; i < roadSegments.Count; i++)
+            foreach (var boundPointsKeyValueA in node.BoundPoints)
             {
-                for (int j = 0; j < roadSegments.Count; j++)
+                foreach (var boundPointsKeyValueB in node.BoundPoints)
                 {
-                    if (i == j)
+                    if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
                     {
                         continue;
                     }
 
-                    var roadSegmentI = roadSegments[i];
-                    var roadSegmentJ = roadSegments[j];
-
-                    SetIntersectionPoint2(roadSegmentI.LeftBound, roadSegmentJ.RightBound);
-                    SetIntersectionPoint2(roadSegmentI.LeftBound, roadSegmentJ.LeftBound);
-                    SetIntersectionPoint2(roadSegmentI.RightBound, roadSegmentJ.RightBound);
+                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.RightBound);
+                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.LeftBound);
+                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
                 }
             }
 
-            FilterSegmentsIntersectionPoints(roadSegments);
+            foreach (var boundPointsValue in node.BoundPoints.Values)
+            {
+                FilterSegmentIntersectionPoints(boundPointsValue.Segment);
+            }
         }
 
-        private void FilterSegmentsIntersectionPoints(IEnumerable<RoadSegment> segments)
+        private void FilterSegmentIntersectionPoints(RoadSegment segment)
         {
-            foreach (var segment in segments)
+            var outerNode = segment.PointA == Node ? segment.PointB : segment.PointA;
+            var minSqrDist = float.MaxValue;
+            var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
+
+            if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
             {
-                var outerNode = segment.PointA == Node ? segment.PointB : segment.PointA;
-                var minSqrDist = float.MaxValue;
-                var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
+                var leftIntersectionBoundPos = Vector3.zero;
 
-                if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
+                foreach (var point in segment.LeftBound.BoundIntersectionPoints)
                 {
-                    var leftIntersectionBoundPos = Vector3.zero;
+                    var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
-                    foreach (var point in segment.LeftBound.BoundIntersectionPoints)
+                    if (sqrDist < minSqrDist)
                     {
-                        var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
-
-                        if (sqrDist < minSqrDist)
-                        {
-                            minSqrDist = sqrDist;
-                            leftIntersectionBoundPos = point;
-                        }
+                        minSqrDist = sqrDist;
+                        leftIntersectionBoundPos = point;
                     }
-
-                    Node.BoundPoints[tuple].LeftBoundPoint = leftIntersectionBoundPos;
-                    IntersectionPoints.Add(leftIntersectionBoundPos);
                 }
 
-                if (segment.RightBound.BoundIntersectionPoints.Count > 0)
+                Node.BoundPoints[tuple].LeftBoundPoint = leftIntersectionBoundPos;
+                IntersectionPoints.Add(leftIntersectionBoundPos);
+            }
+
+            if (segment.RightBound.BoundIntersectionPoints.Count > 0)
+            {
+                minSqrDist = float.MaxValue;
+                var rightIntersectionBoundPos = Vector3.zero;
+
+                foreach (var point in segment.RightBound.BoundIntersectionPoints)
                 {
-                    minSqrDist = float.MaxValue;
-                    var rightIntersectionBoundPos = Vector3.zero;
+                    var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
 
-                    foreach (var point in segment.RightBound.BoundIntersectionPoints)
+                    if (sqrDist < minSqrDist)
                     {
-                        var sqrDist = Vector3.SqrMagnitude(outerNode.BoundPoints[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
-
-                        if (sqrDist < minSqrDist)
-                        {
-                            minSqrDist = sqrDist;
-                            rightIntersectionBoundPos = point;
-                        }
+                        minSqrDist = sqrDist;
+                        rightIntersectionBoundPos = point;
                     }
-
-                    Node.BoundPoints[tuple].RightBoundPoint = rightIntersectionBoundPos;
-                    IntersectionPoints.Add(rightIntersectionBoundPos);
                 }
+
+                Node.BoundPoints[tuple].RightBoundPoint = rightIntersectionBoundPos;
+                IntersectionPoints.Add(rightIntersectionBoundPos);
             }
         }
 

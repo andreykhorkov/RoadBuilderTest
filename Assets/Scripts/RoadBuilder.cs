@@ -93,8 +93,6 @@ namespace experimental
 
                 if (roadList.Count > 1)
                 {
-                    var roadSegmentsList = new List<RoadSegment>();
-
                     for (int i = 0; i < roadList.Count; i++)
                     {
                         var indexRoadPair = roadList[i];
@@ -105,16 +103,18 @@ namespace experimental
 
                         if (prevIndex >= 0)
                         {
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[prevIndex], road.Nodes[nodeIndex]));
+                            node.BoundPoints[new Tuple<Node, Node>(road.Nodes[prevIndex], node)].Segment =
+                                new RoadSegment(road.Nodes[prevIndex], node);
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
-                            roadSegmentsList.Add(new RoadSegment(road.Nodes[nodeIndex], road.Nodes[nextIndex]));
+                            node.BoundPoints[new Tuple<Node, Node>(node, road.Nodes[nextIndex])].Segment =
+                                new RoadSegment(node, road.Nodes[nextIndex]);
                         }
                     }
                     
-                    Intersections.Add(node, new Intersection(roadSegmentsList, node));
+                    Intersections.Add(node, new Intersection(node));
                 }
             }
         }
@@ -124,6 +124,20 @@ namespace experimental
             SetRoadBounds();
             FindIntersections();
             FindStandalonePoints();
+
+            foreach (var intersection in Intersections)
+            {
+                foreach (var boundPointKeyValue in intersection.Value.Node.BoundPoints)
+                {
+                    var outerPoint = intersection.Value.Node == boundPointKeyValue.Key.Item1
+                        ? boundPointKeyValue.Key.Item2
+                        : boundPointKeyValue.Key.Item1;
+
+                    boundPointKeyValue.Value.SetIntersectionPerpendicularPoint(outerPoint);
+                    boundPointKeyValue.Value.IntersectionPerpendicular = Vector3.Cross(
+                        boundPointKeyValue.Key.Item1.Position - boundPointKeyValue.Key.Item2.Position, Vector3.down);
+                }
+            }
         }
 
         private void SetRoadBounds()
@@ -161,8 +175,12 @@ namespace experimental
 
                 foreach (var boundPoints in intersection.Node.BoundPoints.Values)
                 {
+                    
                     Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
                     Gizmos.DrawSphere(boundPoints.RightBoundPoint, 0.5f);
+
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawRay(boundPoints.IntersectionPerpendicularPoint, boundPoints.IntersectionPerpendicular);
                 }
             }
 
@@ -279,8 +297,14 @@ namespace experimental
             }
 
             var subRoads = GetSubRoads(road);
+
             for (int i = 0; i < subRoads.Count; i++)
             {
+                if (subRoads[i].Count < 2)
+                {
+                    continue;
+                }
+
                 CreateSubRoadMesh(subRoads[i], $"{subRoadName}_{i}");
             } 
         }
