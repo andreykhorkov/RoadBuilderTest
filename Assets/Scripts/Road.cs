@@ -17,6 +17,8 @@ namespace experimental
 
         void OnDrawGizmos()
         {
+            return;
+
             Gizmos.color = Color.cyan;
 
             for (int i = 0; i < nodes.Length; i++)

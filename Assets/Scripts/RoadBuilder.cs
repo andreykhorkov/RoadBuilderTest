@@ -122,6 +122,9 @@ namespace experimental
         private void BuildRoads()
         {
             SetRoadBounds();
+
+            return;
+
             FindIntersections();
 
             foreach (var intersection in Intersections)
@@ -160,6 +163,46 @@ namespace experimental
         void OnDrawGizmos()
         {
             BuildRoads();
+
+            foreach (var road in roads)
+            {
+                Node prevNode = null;
+
+                foreach (var roadNode in road.Nodes)
+                {
+                    foreach (var nodeData in roadNode.NodeDataDict)
+                    {
+                        Gizmos.color = Color.white; 
+                        Gizmos.DrawSphere(nodeData.Value.Node.Position, 0.3f);
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawSphere(nodeData.Value.LeftBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawSphere(nodeData.Value.RightBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.cyan;
+                        Gizmos.DrawLine(nodeData.Key.Item1.Position, nodeData.Key.Item2.Position);
+                    }
+
+                    if (prevNode != null)
+                    {
+                        var tuple = new Tuple<Node, Node>(prevNode, roadNode);
+                        var prevRoadData = prevNode.NodeDataDict[tuple];
+                        var currentNodeData = roadNode.NodeDataDict[tuple];
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawLine(prevRoadData.LeftBoundPoint, currentNodeData.LeftBoundPoint);
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawLine(prevRoadData.RightBoundPoint, currentNodeData.RightBoundPoint);
+                    }
+                    
+
+                    prevNode = roadNode;
+                } 
+            }
+
+            return;
 
             foreach (var intersection in Intersections.Values)
             {
