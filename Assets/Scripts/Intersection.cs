@@ -36,7 +36,6 @@ namespace experimental
 
     public class Intersection
     {
-        public List<RoadSegment> RoadSegments;
         public List<Vector3> IntersectionPoints;
         public Node Node { get; set; }
 
@@ -94,7 +93,9 @@ namespace experimental
 
                 foreach (var point in segment.LeftBound.BoundIntersectionPoints)
                 {
-                    var sqrDist = Vector3.SqrMagnitude(outerNode.NodeDataDict[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
+                    var nodeData = outerNode.NodeDataDict[tuple];
+
+                    var sqrDist = Vector3.SqrMagnitude(nodeData.LeftBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -114,7 +115,9 @@ namespace experimental
 
                 foreach (var point in segment.RightBound.BoundIntersectionPoints)
                 {
-                    var sqrDist = Vector3.SqrMagnitude(outerNode.NodeDataDict[new Tuple<Node, Node>(segment.PointA, segment.PointB)].LeftBoundPoint - point);
+                    var nodeData = outerNode.NodeDataDict[tuple];
+
+                    var sqrDist = Vector3.SqrMagnitude(nodeData.RightBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -128,7 +131,7 @@ namespace experimental
             }
         }
 
-        private void SetIntersectionPoint(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
+        private static void SetIntersectionPoint(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
         {
             var point = LineLineIntersection(boundA, boundB);
 
@@ -147,18 +150,48 @@ namespace experimental
             {
                 IntersectionPoints.Add(point);
 
-                foreach (var boundPoints in Node.NodeDataDict.Values)
+                //foreach (var boundPoints in Node.NodeDataDict.Values)
+                //{
+                //    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.LeftBoundPoint - point), 0))
+                //    {
+                //        boundPoints.LeftBoundPoint = point; //changing bound points according to intersection points
+                //    }
+
+                //    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.RightBoundPoint - point), 0))
+                //    {
+                //        boundPoints.RightBoundPoint = point;
+                //    }
+                //}
+            }
+        }
+
+        public List<Vector3> GizmosPoints { get; set; } = new  List<Vector3>();
+
+        public void Temp()
+        {
+            foreach (var boundPointsKeyValueA in Node.NodeDataDict)
+            {
+                foreach (var boundPointsKeyValueB in Node.NodeDataDict)
                 {
-                    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.LeftBoundPoint - point), 0))
+                    if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
                     {
-                        boundPoints.LeftBoundPoint = point;
+                        continue;
                     }
 
-                    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.RightBoundPoint - point), 0))
-                    {
-                        boundPoints.RightBoundPoint = point;
-                    }
+                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.RightBound);
+                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.LeftBound);
+                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
                 }
+            }
+        }
+
+        private void FindIntersectionPoints(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
+        {
+            var point = LineLineIntersection(boundA, boundB);
+
+            //if (CheckPoint(point, boundA) && CheckPoint(point, boundB))
+            {
+                GizmosPoints.Add(point);
             }
         }
 

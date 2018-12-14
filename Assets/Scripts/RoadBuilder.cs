@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace experimental
@@ -122,11 +121,20 @@ namespace experimental
         private void BuildRoads()
         {
             SetRoadBounds();
-
-            return;
-
             FindIntersections();
+            SetPerpendiculars();
 
+            foreach (var intersection in Intersections)
+            {
+                intersection.Value.Temp();
+            }
+            
+
+            SortIntersectionPointsClockwise();
+        }
+
+        private void SetPerpendiculars()
+        {
             foreach (var intersection in Intersections)
             {
                 foreach (var nodeData in intersection.Value.Node.NodeDataDict)
@@ -136,11 +144,9 @@ namespace experimental
                         : nodeData.Key.Item1;
 
                     nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionPoints);
-                    
+
                 }
             }
-
-            SortIntersectionPointsClockwise();
         }
 
         private void SetRoadBounds()
@@ -163,43 +169,17 @@ namespace experimental
         void OnDrawGizmos()
         {
             BuildRoads();
+            DrawRoadSegments();
+            DrawSegmentIntersectionPoints();
 
-            foreach (var road in roads)
+            Gizmos.color = Color.black;
+
+            foreach (var intersection in Intersections)
             {
-                Node prevNode = null;
-
-                foreach (var roadNode in road.Nodes)
+                foreach (var point in intersection.Value.GizmosPoints)
                 {
-                    foreach (var nodeData in roadNode.NodeDataDict)
-                    {
-                        Gizmos.color = Color.white; 
-                        Gizmos.DrawSphere(nodeData.Value.Node.Position, 0.3f);
-
-                        Gizmos.color = Color.blue;
-                        Gizmos.DrawSphere(nodeData.Value.LeftBoundPoint, 0.3f);
-
-                        Gizmos.color = Color.red;
-                        Gizmos.DrawSphere(nodeData.Value.RightBoundPoint, 0.3f);
-
-                        Gizmos.color = Color.cyan;
-                        Gizmos.DrawLine(nodeData.Key.Item1.Position, nodeData.Key.Item2.Position);
-                    }
-
-                    if (prevNode != null)
-                    {
-                        var tuple = new Tuple<Node, Node>(prevNode, roadNode);
-                        var prevRoadData = prevNode.NodeDataDict[tuple];
-                        var currentNodeData = roadNode.NodeDataDict[tuple];
-
-                        Gizmos.color = Color.blue;
-                        Gizmos.DrawLine(prevRoadData.LeftBoundPoint, currentNodeData.LeftBoundPoint);
-                        Gizmos.color = Color.red;
-                        Gizmos.DrawLine(prevRoadData.RightBoundPoint, currentNodeData.RightBoundPoint);
-                    }
-                    
-
-                    prevNode = roadNode;
-                } 
+                    Gizmos.DrawSphere(point, 0.3f);
+                }
             }
 
             return;
@@ -227,6 +207,79 @@ namespace experimental
             }
 
             DrawIntersectionBounds();
+        }
+
+        private void DrawSegmentIntersectionPoints()
+        {
+            Gizmos.color = Color.magenta;
+
+            foreach (var intersectionsValue in Intersections.Values)
+            {
+                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
+                {
+                    foreach (var point in value.Segment.LeftBound.BoundIntersectionPoints)
+                    {
+                        Gizmos.DrawSphere(point, 0.5f);
+                    }
+                }
+            }
+
+            Gizmos.color = Color.cyan;
+
+            foreach (var intersectionsValue in Intersections.Values)
+            {
+                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
+                {
+                    foreach (var point in value.Segment.RightBound.BoundIntersectionPoints)
+                    {
+                        Gizmos.DrawSphere(point, 0.5f);
+                    }
+                }
+            }
+        }
+
+        private void DrawRoadSegments()
+        {
+            foreach (var road in roads)
+            {
+                Node prevNode = null;
+
+                foreach (var roadNode in road.Nodes)
+                {
+                    foreach (var nodeData in roadNode.NodeDataDict)
+                    {
+                        Gizmos.color = Color.white;
+                        Gizmos.DrawSphere(nodeData.Value.Node.Position, 0.3f);
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawSphere(nodeData.Value.LeftBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawSphere(nodeData.Value.RightBoundPoint, 0.3f);
+
+                        Gizmos.color = Color.cyan;
+                        Gizmos.DrawLine(nodeData.Key.Item1.Position, nodeData.Key.Item2.Position);
+
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawLine(nodeData.Value.LeftBoundPoint, nodeData.Value.RightBoundPoint);
+                    }
+
+                    if (prevNode != null)
+                    {
+                        var tuple = new Tuple<Node, Node>(prevNode, roadNode);
+                        var prevRoadData = prevNode.NodeDataDict[tuple];
+                        var currentNodeData = roadNode.NodeDataDict[tuple];
+
+                        Gizmos.color = Color.blue;
+                        Gizmos.DrawLine(prevRoadData.LeftBoundPoint, currentNodeData.LeftBoundPoint);
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawLine(prevRoadData.RightBoundPoint, currentNodeData.RightBoundPoint);
+                    }
+
+
+                    prevNode = roadNode;
+                }
+            }
         }
 
         private void DrawIntersectionBounds()
@@ -294,18 +347,6 @@ namespace experimental
 
                 prevPerp = perp;
             }
-
-
-            //for (int i = 0; i < nodes.Length; i++)
-            //{
-            //    Gizmos.color = Color.red;
-
-            //    foreach (var point in nodes[i].BoundPoints)
-            //    {
-            //        Gizmos.DrawSphere(point.Value.LeftBoundPoint, 0.3f);
-            //        Gizmos.DrawSphere(point.Value.RightBoundPoint, 0.3f);
-            //    }
-            //}
         }
 
         private List<List<Node>> GetSubRoads(Road road)
