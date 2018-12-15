@@ -37,7 +37,10 @@ namespace experimental
     public class Intersection
     {
         public List<Vector3> IntersectionPoints;
-        public Node Node { get; set; }
+        public Node Node { get; }
+        public List<Vector3> IntersectionBoundPoints { get; set; } = new List<Vector3>();
+        public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
+        public List<RoadSegment.Bound> RightBounds { get; set; } = new List<RoadSegment.Bound>();
 
         public Intersection(Node node)
         {
@@ -120,13 +123,12 @@ namespace experimental
         {
             var point = LineLineIntersection(boundA, boundB);
 
-            boundA.BoundIntersectionPoints.Add(point);
-            boundB.BoundIntersectionPoints.Add(point);
+            if (CheckPoint(point, boundA) && CheckPoint(point, boundB))
+            {
+                boundA.BoundIntersectionPoints.Add(point);
+                boundB.BoundIntersectionPoints.Add(point);
+            }
         }
-
-        public List<Vector3> IntersectionBoundPoints { get; set; } = new  List<Vector3>();
-        public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
-        public List<RoadSegment.Bound> RightBounds { get; set; } = new List<RoadSegment.Bound>();
 
         public void FindIntersectionBoundPoints()
         {

@@ -249,6 +249,35 @@ namespace experimental
             }
         }
 
+        private void DrawSegmentIntersectionPoints()
+        {
+            Gizmos.color = Color.magenta;
+
+            foreach (var intersectionsValue in Intersections.Values)
+            {
+                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
+                {
+                    foreach (var point in value.Segment.LeftBound.BoundIntersectionPoints)
+                    {
+                        Gizmos.DrawSphere(point, 0.5f);
+                    }
+                }
+            }
+
+            Gizmos.color = Color.cyan;
+
+            foreach (var intersectionsValue in Intersections.Values)
+            {
+                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
+                {
+                    foreach (var point in value.Segment.RightBound.BoundIntersectionPoints)
+                    {
+                        Gizmos.DrawSphere(point, 0.5f);
+                    }
+                }
+            }
+        }
+
         private void DrawRoadSegments()
         {
             foreach (var road in roads)
