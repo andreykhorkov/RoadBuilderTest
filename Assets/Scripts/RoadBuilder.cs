@@ -157,13 +157,7 @@ namespace experimental
             SetRoadBounds();
             FindIntersections();
             SetPerpendiculars();
-
-            foreach (var intersection in Intersections)
-            {
-                intersection.Value.FindIntersectionBoundPoints();
-            }
-            
-
+            FindIntersectionsBoundPoints();
             SortIntersectionPointsClockwise();
         }
 
@@ -177,9 +171,17 @@ namespace experimental
                         ? nodeData.Key.Item2
                         : nodeData.Key.Item1;
 
-                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionPoints);
+                    nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionBoundPoints);
 
                 }
+            }
+        }
+
+        private void FindIntersectionsBoundPoints()
+        {
+            foreach (var intersection in Intersections)
+            {
+                intersection.Value.FindIntersectionBoundPoints();
             }
         }
 
@@ -196,7 +198,7 @@ namespace experimental
         {
             foreach (var intersection in Intersections.Values)
             {
-                intersection.IntersectionPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
+                intersection.IntersectionBoundPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
         }
 
@@ -205,34 +207,6 @@ namespace experimental
             BuildRoads();
             DrawRoadSegments();
             DrawIntersectionBoundPoints();
-            //DrawSegmentIntersectionPoints();
-
-            
-
-            return;
-
-            foreach (var intersection in Intersections.Values)
-            {
-                Gizmos.color = Color.yellow; 
-                Gizmos.DrawSphere(intersection.Node.Position, 0.5f);
-
-                foreach (var point in intersection.IntersectionPoints)
-                {
-                    Gizmos.DrawSphere(point, 0.8f);
-                }
-
-                Gizmos.color = Color.cyan;
-
-                foreach (var boundPoints in intersection.Node.NodeDataDict.Values)
-                {
-                    Gizmos.color = Color.black;
-                    Gizmos.DrawSphere(boundPoints.Suka, 0.3f);
-
-                    Gizmos.DrawSphere(boundPoints.LeftBoundPoint, 0.5f);
-                    Gizmos.DrawSphere(boundPoints.RightBoundPoint, 0.5f);
-                }
-            }
-
             DrawIntersectionBounds();
         }
 
@@ -245,35 +219,6 @@ namespace experimental
                 foreach (var point in intersection.Value.IntersectionBoundPoints)
                 {
                     Gizmos.DrawSphere(point, 0.3f);
-                }
-            }
-        }
-
-        private void DrawSegmentIntersectionPoints()
-        {
-            Gizmos.color = Color.magenta;
-
-            foreach (var intersectionsValue in Intersections.Values)
-            {
-                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
-                {
-                    foreach (var point in value.Segment.LeftBound.BoundIntersectionPoints)
-                    {
-                        Gizmos.DrawSphere(point, 0.5f);
-                    }
-                }
-            }
-
-            Gizmos.color = Color.cyan;
-
-            foreach (var intersectionsValue in Intersections.Values)
-            {
-                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
-                {
-                    foreach (var point in value.Segment.RightBound.BoundIntersectionPoints)
-                    {
-                        Gizmos.DrawSphere(point, 0.5f);
-                    }
                 }
             }
         }
@@ -316,7 +261,6 @@ namespace experimental
                         Gizmos.DrawLine(prevRoadData.RightBoundPoint, currentNodeData.RightBoundPoint);
                     }
 
-
                     prevNode = roadNode;
                 }
             }
@@ -324,20 +268,20 @@ namespace experimental
 
         private void DrawIntersectionBounds()
         {
-            Gizmos.color = Color.red;
+            Gizmos.color = Color.yellow;
 
             foreach (var intersection in Intersections.Values)
             {
-                for (int i = 0; i < intersection.IntersectionPoints.Count - 1; i++)
+                for (int i = 0; i < intersection.IntersectionBoundPoints.Count - 1; i++)
                 {
-                    var point = intersection.IntersectionPoints[i];
-                    var nextPoint = intersection.IntersectionPoints[i + 1];
+                    var point = intersection.IntersectionBoundPoints[i];
+                    var nextPoint = intersection.IntersectionBoundPoints[i + 1];
 
                     Gizmos.DrawLine(point, nextPoint);
                 }
 
-                if(intersection.IntersectionPoints.Count > 0)   
-                    Gizmos.DrawLine(intersection.IntersectionPoints[0], intersection.IntersectionPoints[intersection.IntersectionPoints.Count - 1]);
+                if(intersection.IntersectionBoundPoints.Count > 0)   
+                    Gizmos.DrawLine(intersection.IntersectionBoundPoints[0], intersection.IntersectionBoundPoints[intersection.IntersectionBoundPoints.Count - 1]);
             }
         }
 
@@ -371,9 +315,6 @@ namespace experimental
                 var cos = Vector3.Dot(avg, perp);
                 var leftBoundPosition = pointA + avg * road.Width * 0.5f / cos;
                 var rightBoundPosition = pointA - avg * road.Width * 0.5f / cos;
-
-                //Gizmos.color = Color.green;
-                //Gizmos.DrawLine(leftBoundPosition, rightBoundPosition);
 
                 if (prevNode != null)
                 {

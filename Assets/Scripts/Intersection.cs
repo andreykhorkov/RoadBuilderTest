@@ -36,7 +36,6 @@ namespace experimental
 
     public class Intersection
     {
-        public List<Vector3> IntersectionPoints;
         public Node Node { get; }
         public List<Vector3> IntersectionBoundPoints { get; set; } = new List<Vector3>();
         public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
@@ -45,8 +44,6 @@ namespace experimental
         public Intersection(Node node)
         {
             Node = node;
-
-            IntersectionPoints = new List<Vector3>();
 
             foreach (var boundPointsKeyValueA in node.NodeDataDict)
             {
@@ -93,7 +90,6 @@ namespace experimental
                 }
 
                 Node.NodeDataDict[tuple].LeftBoundPoint = leftIntersectionBoundPos;
-                IntersectionPoints.Add(leftIntersectionBoundPos);
             }
 
             if (segment.RightBound.BoundIntersectionPoints.Count > 0)
@@ -115,7 +111,6 @@ namespace experimental
                 }
 
                 Node.NodeDataDict[tuple].RightBoundPoint = rightIntersectionBoundPos;
-                IntersectionPoints.Add(rightIntersectionBoundPos);
             }
         }
 
@@ -161,6 +156,9 @@ namespace experimental
                     }
                 }
 
+                IntersectionBoundPoints.Add(Node.NodeDataDict[tuple].LeftBoundPoint);
+                IntersectionBoundPoints.Add(Node.NodeDataDict[tuple].RightBoundPoint);
+
                 var seg = nodeData.Segment;
                 LeftBounds.Add(CheckBoundDirection(outerNode, seg.LeftBound, isLeftBound: true) ? seg.LeftBound : seg.RightBound); 
                 RightBounds.Add(CheckBoundDirection(outerNode, seg.RightBound, isLeftBound: false) ? seg.RightBound : seg.LeftBound); 
@@ -171,8 +169,6 @@ namespace experimental
                 Debug.LogError($"amount of left bound and right bound for the intersection {Node.Id} does not match");
                 return;
             }
-
-            IntersectionBoundPoints.Clear();
 
             for (int i = 0; i < LeftBounds.Count - 1; i++)
             {
