@@ -160,7 +160,7 @@ namespace experimental
 
             foreach (var intersection in Intersections)
             {
-                intersection.Value.Temp();
+                intersection.Value.FindIntersectionBoundPoints();
             }
             
 
@@ -204,17 +204,10 @@ namespace experimental
         {
             BuildRoads();
             DrawRoadSegments();
-            DrawSegmentIntersectionPoints();
+            DrawIntersectionBoundPoints();
+            //DrawSegmentIntersectionPoints();
 
-            Gizmos.color = Color.black;
-
-            foreach (var intersection in Intersections)
-            {
-                foreach (var point in intersection.Value.GizmosPoints)
-                {
-                    Gizmos.DrawSphere(point, 0.3f);
-                }
-            }
+            
 
             return;
 
@@ -243,31 +236,15 @@ namespace experimental
             DrawIntersectionBounds();
         }
 
-        private void DrawSegmentIntersectionPoints()
+        private void DrawIntersectionBoundPoints()
         {
-            Gizmos.color = Color.magenta;
+            Gizmos.color = Color.black;
 
-            foreach (var intersectionsValue in Intersections.Values)
+            foreach (var intersection in Intersections)
             {
-                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
+                foreach (var point in intersection.Value.IntersectionBoundPoints)
                 {
-                    foreach (var point in value.Segment.LeftBound.BoundIntersectionPoints)
-                    {
-                        Gizmos.DrawSphere(point, 0.5f);
-                    }
-                }
-            }
-
-            Gizmos.color = Color.cyan;
-
-            foreach (var intersectionsValue in Intersections.Values)
-            {
-                foreach (var value in intersectionsValue.Node.NodeDataDict.Values)
-                {
-                    foreach (var point in value.Segment.RightBound.BoundIntersectionPoints)
-                    {
-                        Gizmos.DrawSphere(point, 0.5f);
-                    }
+                    Gizmos.DrawSphere(point, 0.3f);
                 }
             }
         }

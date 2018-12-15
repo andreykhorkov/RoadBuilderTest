@@ -60,21 +60,6 @@ namespace experimental
                 }
             }
 
-            foreach (var boundPointsKeyValueA in node.NodeDataDict)
-            {
-                foreach (var boundPointsKeyValueB in node.NodeDataDict)
-                {
-                    if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
-                    {
-                        continue;
-                    }
-
-                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.RightBound);
-                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.LeftBound);
-                    SetIntersectionPoint2(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
-                }
-            }
-
             foreach (var boundPointsValue in node.NodeDataDict.Values)
             {
                 FilterSegmentIntersectionPoints(boundPointsValue.Segment);
@@ -135,57 +120,16 @@ namespace experimental
         {
             var point = LineLineIntersection(boundA, boundB);
 
-            if (CheckPoint(point, boundA) && CheckPoint(point, boundB))
-            {
-                boundA.BoundIntersectionPoints.Add(point);
-                boundB.BoundIntersectionPoints.Add(point);
-            }
+            boundA.BoundIntersectionPoints.Add(point);
+            boundB.BoundIntersectionPoints.Add(point);
         }
 
-        private void SetIntersectionPoint2(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
-        {
-            var point = LineLineIntersection(boundA, boundB);
-
-            if (boundA.BoundIntersectionPoints.Count == 0 && boundB.BoundIntersectionPoints.Count == 0 && !CheckPoint(point, boundA) && !CheckPoint(point, boundB))
-            {
-                IntersectionPoints.Add(point);
-
-                //foreach (var boundPoints in Node.NodeDataDict.Values)
-                //{
-                //    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.LeftBoundPoint - point), 0))
-                //    {
-                //        boundPoints.LeftBoundPoint = point; //changing bound points according to intersection points
-                //    }
-
-                //    if (!Mathf.Approximately(Vector3.SqrMagnitude(boundPoints.RightBoundPoint - point), 0))
-                //    {
-                //        boundPoints.RightBoundPoint = point;
-                //    }
-                //}
-            }
-        }
-
-        public List<Vector3> GizmosPoints { get; set; } = new  List<Vector3>();
+        public List<Vector3> IntersectionBoundPoints { get; set; } = new  List<Vector3>();
         public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
         public List<RoadSegment.Bound> RightBounds { get; set; } = new List<RoadSegment.Bound>();
 
-        public void Temp()
+        public void FindIntersectionBoundPoints()
         {
-            foreach (var boundPointsKeyValueA in Node.NodeDataDict)
-            {
-                foreach (var boundPointsKeyValueB in Node.NodeDataDict)
-                {
-                    if (boundPointsKeyValueA.Value == boundPointsKeyValueB.Value)
-                    {
-                        continue;
-                    }
-
-                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.RightBound);
-                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.LeftBound, boundPointsKeyValueB.Value.Segment.LeftBound);
-                    FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
-                }
-            }
-
             var outerNodes = new List<Node>();
 
             foreach (var nodeData in Node.NodeDataDict)
@@ -210,7 +154,7 @@ namespace experimental
 
                     if (!Node.NodeDataDict.TryGetValue(tuple, out nodeData))
                     {
-                        Debug.Log("!!");
+                        Debug.Log($"there is no nodaData for given nodes: {Node}: {outerNode}");
                         return;
                     }
                 }
@@ -226,24 +170,14 @@ namespace experimental
                 return;
             }
 
-            GizmosPoints.Clear();
-
-            foreach (var leftBound in RightBounds)
-            {
-                Debug.Log($"{leftBound.BorderPointA}:{leftBound.BorderPointB}");
-            }
+            IntersectionBoundPoints.Clear();
 
             for (int i = 0; i < LeftBounds.Count - 1; i++)
             {
-                GizmosPoints.Add(LineLineIntersection(LeftBounds[i], RightBounds[i + 1]));
+                IntersectionBoundPoints.Add(LineLineIntersection(LeftBounds[i], RightBounds[i + 1]));
             }
 
-            GizmosPoints.Add(LineLineIntersection(RightBounds[0], LeftBounds[RightBounds.Count - 1]));
-
-            foreach (var point in GizmosPoints)
-            {
-                Debug.Log(point);
-            }
+            IntersectionBoundPoints.Add(LineLineIntersection(RightBounds[0], LeftBounds[RightBounds.Count - 1]));
         }
 
         private bool CheckBoundDirection(Node outerNode, RoadSegment.Bound bound, bool isLeftBound)
@@ -255,19 +189,8 @@ namespace experimental
             var dir = outerNodeSideBound - outerNode.Position;
             var dotProd = Vector3.Dot(Vector3.up, Vector3.Cross(dir, Node.Position - outerNode.Position));
             var isAligned = dotProd * (isLeftBound ? 1 : -1) > 0;
-            //Debug.Log($"outerNodeLeftBound: {outerNodeLeftBound}, {isAligned}");
 
             return isAligned;
-        }
-
-        private void FindIntersectionPoints(RoadSegment.Bound boundA, RoadSegment.Bound boundB)
-        {
-            var point = LineLineIntersection(boundA, boundB);
-
-            //if (CheckPoint(point, boundA) && CheckPoint(point, boundB))
-            {
-                GizmosPoints.Add(point);
-            }
         }
 
         public static bool CheckPoint(Vector3 pos, RoadSegment.Bound bound)
