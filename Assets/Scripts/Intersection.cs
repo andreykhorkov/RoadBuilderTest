@@ -166,6 +166,8 @@ namespace experimental
         }
 
         public List<Vector3> GizmosPoints { get; set; } = new  List<Vector3>();
+        public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
+        public List<RoadSegment.Bound> RightBounds { get; set; } = new List<RoadSegment.Bound>();
 
         public void Temp()
         {
@@ -183,6 +185,79 @@ namespace experimental
                     FindIntersectionPoints(boundPointsKeyValueA.Value.Segment.RightBound, boundPointsKeyValueB.Value.Segment.RightBound);
                 }
             }
+
+            var outerNodes = new List<Node>();
+
+            foreach (var nodeData in Node.NodeDataDict)
+            {
+                var outerNode = nodeData.Key.Item1 == Node ? nodeData.Key.Item2 : nodeData.Key.Item1;
+                outerNodes.Add(outerNode);
+            }
+
+            outerNodes.Sort(new ClockwiseNodeComparer(Node));
+            LeftBounds.Clear();
+            RightBounds.Clear();
+
+            foreach (var outerNode in outerNodes)
+            {
+                var tuple = new Tuple<Node, Node>(outerNode, Node);
+
+                NodeData nodeData;
+
+                if (!Node.NodeDataDict.TryGetValue(tuple, out nodeData))
+                {
+                    tuple = new Tuple<Node, Node>(Node, outerNode);
+
+                    if (!Node.NodeDataDict.TryGetValue(tuple, out nodeData))
+                    {
+                        Debug.Log("!!");
+                        return;
+                    }
+                }
+
+                var seg = nodeData.Segment;
+                LeftBounds.Add(CheckBoundDirection(outerNode, seg.LeftBound, isLeftBound: true) ? seg.LeftBound : seg.RightBound); 
+                RightBounds.Add(CheckBoundDirection(outerNode, seg.RightBound, isLeftBound: false) ? seg.RightBound : seg.LeftBound); 
+            }
+
+            if (LeftBounds.Count != RightBounds.Count)
+            {
+                Debug.LogError($"amount of left bound and right bound for the intersection {Node.Id} does not match");
+                return;
+            }
+
+            GizmosPoints.Clear();
+
+            foreach (var leftBound in RightBounds)
+            {
+                Debug.Log($"{leftBound.BorderPointA}:{leftBound.BorderPointB}");
+            }
+
+            for (int i = 0; i < LeftBounds.Count - 1; i++)
+            {
+                GizmosPoints.Add(LineLineIntersection(LeftBounds[i], RightBounds[i + 1]));
+            }
+
+            GizmosPoints.Add(LineLineIntersection(RightBounds[0], LeftBounds[RightBounds.Count - 1]));
+
+            foreach (var point in GizmosPoints)
+            {
+                Debug.Log(point);
+            }
+        }
+
+        private bool CheckBoundDirection(Node outerNode, RoadSegment.Bound bound, bool isLeftBound)
+        {
+            var distA = Vector3.SqrMagnitude(outerNode.Position - bound.BorderPointA);
+            var distB = Vector3.SqrMagnitude(outerNode.Position - bound.BorderPointB);
+            var outerNodeSideBound = distA < distB ? bound.BorderPointA : bound.BorderPointB;
+
+            var dir = outerNodeSideBound - outerNode.Position;
+            var dotProd = Vector3.Dot(Vector3.up, Vector3.Cross(dir, Node.Position - outerNode.Position));
+            var isAligned = dotProd * (isLeftBound ? 1 : -1) > 0;
+            //Debug.Log($"outerNodeLeftBound: {outerNodeLeftBound}, {isAligned}");
+
+            return isAligned;
         }
 
         private void FindIntersectionPoints(RoadSegment.Bound boundA, RoadSegment.Bound boundB)

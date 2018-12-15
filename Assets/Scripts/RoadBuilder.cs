@@ -6,16 +6,16 @@ namespace experimental
 {
     public class ClockwiseComparer : IComparer<Vector3>
     {
-        public Vector3 origin { get; set; }
+        public Vector3 Origin { get; set; }
 
         public ClockwiseComparer(Vector3 origin)
         {
-            this.origin = origin;
+            Origin = origin;
         }
 
         public int Compare(Vector3 first, Vector3 second)
         {
-            return IsClockwise(first, second, origin);
+            return IsClockwise(first, second, Origin);
         }
 
         public static int IsClockwise(Vector3 first, Vector3 second, Vector3 origin)
@@ -23,11 +23,11 @@ namespace experimental
             if (first == second)
                 return 0;
 
-            Vector3 firstOffset = first - origin;
-            Vector3 secondOffset = second - origin;
+            var firstOffset = first - origin;
+            var secondOffset = second - origin;
 
-            float angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
-            float angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
+            var angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
+            var angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
 
             if (angle1 < angle2)
                 return -1;
@@ -35,8 +35,42 @@ namespace experimental
             if (angle1 > angle2)
                 return 1;
 
-            // Check to see which point is closest
-            return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? -1 : 1;
+            return firstOffset.sqrMagnitude < secondOffset.sqrMagnitude ? -1 : 1;
+        }
+    }
+
+    public class ClockwiseNodeComparer : IComparer<Node>
+    {
+        public Node Origin { get; set; }
+
+        public ClockwiseNodeComparer(Node origin)
+        {
+            Origin = origin;
+        }
+
+        public int Compare(Node first, Node second)
+        {
+            return IsClockwise(first, second, Origin);
+        }
+
+        public static int IsClockwise(Node first, Node second, Node origin)
+        {
+            if (first == second)
+                return 0;
+
+            var firstOffset = first.Position - origin.Position;
+            var secondOffset = second.Position - origin.Position;
+
+            var angle1 = Mathf.Atan2(firstOffset.x, firstOffset.z);
+            var angle2 = Mathf.Atan2(secondOffset.x, secondOffset.z);
+
+            if (angle1 < angle2)
+                return -1;
+
+            if (angle1 > angle2)
+                return 1;
+
+            return firstOffset.sqrMagnitude < secondOffset.sqrMagnitude ? -1 : 1;
         }
     }
 
