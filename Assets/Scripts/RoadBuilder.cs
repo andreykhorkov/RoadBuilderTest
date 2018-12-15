@@ -84,10 +84,7 @@ namespace experimental
         void Start()
         {
             BuildRoads();
-            foreach (var road in roads)
-            {
-                CreateRoadMesh(road, road.name);
-            }
+            CreateRoadMeshes();
         }
 
         private void FindIntersections()
@@ -161,6 +158,14 @@ namespace experimental
             SortIntersectionPointsClockwise();
         }
 
+        private void CreateRoadMeshes()
+        {
+            foreach (var road in roads)
+            {
+                CreateRoadMesh(road, road.name);
+            }
+        }
+
         private void SetPerpendiculars()
         {
             foreach (var intersection in Intersections)
@@ -172,7 +177,6 @@ namespace experimental
                         : nodeData.Key.Item1;
 
                     nodeData.Value.SetIntersectionPerpendicularPoint(outerPoint, intersection.Value.IntersectionBoundPoints);
-
                 }
             }
         }

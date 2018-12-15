@@ -12,7 +12,7 @@ namespace experimental
         public Vector3 IntersectionPerpendicularPoint { get; private set; }
         public Vector3 IntersectionPerpendicular { get; private set; }
         public RoadSegment Segment { get; set; }
-        public Vector3 Suka { get; set; }
+        public Vector3 PerpendicularIntersectionPoint { get; set; }
 
         public NodeData(Vector3 leftBoundPoint, Vector3 rightBoundPoint, Node node)
         {
@@ -30,18 +30,18 @@ namespace experimental
             IntersectionPerpendicular = Vector3.Cross(Segment.PointA.Position - Segment.PointB.Position, Vector3.down);
             var boundToIntersect = leftDist < rightDist ? Segment.RightBound : Segment.LeftBound;
 
-            Suka = Intersection.LineLineIntersection(IntersectionPerpendicularPoint,
+            PerpendicularIntersectionPoint = Intersection.LineLineIntersection(IntersectionPerpendicularPoint,
                     IntersectionPerpendicularPoint + IntersectionPerpendicular, boundToIntersect.BorderPointA, boundToIntersect.BorderPointB);
 
-            intersectionPoints.Add(Suka);
+            intersectionPoints.Add(PerpendicularIntersectionPoint);
 
             if (leftDist < rightDist)
             {
-                RightBoundPoint = Suka;
+                RightBoundPoint = PerpendicularIntersectionPoint;
             }
             else
             {
-                LeftBoundPoint = Suka;
+                LeftBoundPoint = PerpendicularIntersectionPoint;
             }
         }
     }
