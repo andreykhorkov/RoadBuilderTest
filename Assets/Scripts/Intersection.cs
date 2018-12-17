@@ -128,6 +128,7 @@ namespace experimental
         public void FindIntersectionBoundPoints()
         {
             var outerNodes = new List<Node>();
+            var point = Vector3.zero;
 
             foreach (var nodeData in Node.NodeDataDict)
             {
@@ -156,8 +157,8 @@ namespace experimental
                     }
                 }
 
-                IntersectionBoundPoints.Add(Node.NodeDataDict[tuple].LeftBoundPoint);
-                IntersectionBoundPoints.Add(Node.NodeDataDict[tuple].RightBoundPoint);
+                CheckAndAddToList(IntersectionBoundPoints, Node.NodeDataDict[tuple].LeftBoundPoint);
+                CheckAndAddToList(IntersectionBoundPoints, Node.NodeDataDict[tuple].RightBoundPoint);
 
                 var seg = nodeData.Segment;
                 LeftBounds.Add(CheckBoundDirection(outerNode, seg.LeftBound, isLeftBound: true) ? seg.LeftBound : seg.RightBound); 
@@ -172,10 +173,29 @@ namespace experimental
 
             for (int i = 0; i < LeftBounds.Count - 1; i++)
             {
-                IntersectionBoundPoints.Add(LineLineIntersection(LeftBounds[i], RightBounds[i + 1]));
+                point = LineLineIntersection(LeftBounds[i], RightBounds[i + 1]);
+                CheckAndAddToList(IntersectionBoundPoints, point);
             }
 
-            IntersectionBoundPoints.Add(LineLineIntersection(RightBounds[0], LeftBounds[RightBounds.Count - 1]));
+            //closing
+            point = LineLineIntersection(RightBounds[0], LeftBounds[RightBounds.Count - 1]);
+            CheckAndAddToList(IntersectionBoundPoints, point);
+            IntersectionBoundPoints.Sort(new ClockwiseComparer(Node.Position));
+        }
+
+        private void CheckAndAddToList(IList<Vector3> boundPointsList, Vector3 point)
+        {
+            for (int i = 0; i < boundPointsList.Count; i++)
+            {
+                var existPoint = boundPointsList[i];
+
+                if (Mathf.Approximately(Vector3.SqrMagnitude(existPoint - point), 0))
+                {
+                    return;
+                }
+            }
+
+            boundPointsList.Add(point);
         }
 
         private bool CheckBoundDirection(Node outerNode, RoadSegment.Bound bound, bool isLeftBound)

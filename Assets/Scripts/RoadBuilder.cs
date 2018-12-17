@@ -155,7 +155,6 @@ namespace experimental
             FindIntersections();
             SetPerpendiculars();
             FindIntersectionsBoundPoints();
-            SortIntersectionPointsClockwise();
         }
 
         private void CreateRoadMeshes()
@@ -195,14 +194,6 @@ namespace experimental
             {
                 var road = roads[i];
                 SetBounds(road);
-            }
-        }
-
-        private void SortIntersectionPointsClockwise()
-        {
-            foreach (var intersection in Intersections.Values)
-            {
-                intersection.IntersectionBoundPoints.Sort(new ClockwiseComparer(intersection.Node.Position));
             }
         }
 
