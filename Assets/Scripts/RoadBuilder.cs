@@ -85,6 +85,11 @@ namespace experimental
         {
             BuildRoads();
             CreateRoadMeshes();
+
+            foreach (var intersection in Intersections.Values)
+            {
+                CreateIntersectionMesh(intersection);
+            }
         }
 
         private void FindIntersections()
@@ -428,6 +433,50 @@ namespace experimental
                 vertices = vertices,
                 triangles = triangles,
                 uv = uvs
+            };
+
+            mf.mesh = mesh;
+        }
+
+        public void CreateIntersectionMesh(Intersection intersection)
+        {
+            var vertices = new Vector3[intersection.IntersectionBoundPoints.Count + 1];
+            var triangles = new int[3 * intersection.IntersectionBoundPoints.Count];
+            var vertexIndex = 1;
+            var triIndex = 0;
+
+            vertices[0] = intersection.Node.Position;
+
+            for (int i = 0; i < intersection.IntersectionBoundPoints.Count; i++)
+            {
+                vertices[vertexIndex] = intersection.IntersectionBoundPoints[i];
+                //vertices[vertexIndex + 1] = intersection.IntersectionBoundPoints[i + 1];
+
+                if (i < intersection.IntersectionBoundPoints.Count - 1)
+                {
+                    triangles[triIndex] = vertexIndex;
+                    triangles[triIndex + 1] = vertexIndex + 1;
+                    triangles[triIndex + 2] = 0;
+                }
+
+                
+
+                triIndex += 3;
+                vertexIndex += 1;
+            }
+
+            //triangles[triIndex] = 1;
+            //triangles[triIndex + 1] = 0;
+            //triangles[triIndex + 3] = intersection.IntersectionBoundPoints.Count - 1;
+
+            var go = new GameObject($"Intersection: {intersection.Node.Id}");
+            go.AddComponent<MeshRenderer>();
+            var mf = go.AddComponent<MeshFilter>();
+
+            var mesh = new Mesh
+            {
+                vertices = vertices,
+                triangles = triangles
             };
 
             mf.mesh = mesh;
