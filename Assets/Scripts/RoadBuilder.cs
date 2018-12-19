@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace experimental
@@ -438,18 +439,32 @@ namespace experimental
             mf.mesh = mesh;
         }
 
+        public struct Projections
+        {
+            public Vector3 XProj { get; }
+            public Vector3 YProj { get; }
+
+            public Projections(Vector3 xProj, Vector3 yProj)
+            {
+                XProj = xProj;
+                YProj = yProj;
+            }
+        }
+
         public void CreateIntersectionMesh(Intersection intersection)
         {
             var vertices = new Vector3[intersection.IntersectionBoundPoints.Count + 1];
             var triangles = new int[3 * intersection.IntersectionBoundPoints.Count];
             var vertexIndex = 1;
             var triIndex = 0;
+            var xyProjections = new Dictionary<int, Projections>();
 
             vertices[0] = intersection.Node.Position;
 
             for (int i = 0; i < intersection.IntersectionBoundPoints.Count; i++)
             {
-                vertices[vertexIndex] = intersection.IntersectionBoundPoints[i];
+                var point = intersection.IntersectionBoundPoints[i];
+                vertices[vertexIndex] = point;
 
                 if (i < intersection.IntersectionBoundPoints.Count - 1)
                 {
@@ -460,11 +475,17 @@ namespace experimental
                     triIndex += 3;
                     vertexIndex += 1;
                 }
+
+                var dir = intersection.Node.Position - point;
+
+                xyProjections.Add(i, new Projections(Vector3.Project(dir, Vector3.right), Vector3.Project(dir, Vector3.forward)));
             }
 
             triangles[triIndex] = intersection.IntersectionBoundPoints.Count;
             triangles[triIndex + 1] = 1;
             triangles[triIndex + 2] = 0;
+
+            SetUVs(xyProjections);
 
             var go = new GameObject($"Intersection: {intersection.Node.Id}");
             go.AddComponent<MeshRenderer>();
@@ -477,6 +498,46 @@ namespace experimental
             };
 
             mf.mesh = mesh;
+        }
+
+        private static void SetUVs(Dictionary<int, Projections> xyProjections)
+        {
+            var maxX = float.MinValue;
+            var minX = float.MaxValue;
+
+            var maxY = float.MinValue;
+            var minY = float.MaxValue;
+
+            foreach (var projection in xyProjections)
+            {
+                var yProj = projection.Value.YProj;
+                var xProj = projection.Value.XProj;
+
+                if (xProj.x > maxX)
+                {
+                    maxX = xProj.x;
+                }
+                else if (xProj.x < minX)
+                {
+                    minX = xProj.x;
+                }
+
+                if (yProj.z > maxY)
+                {
+                    maxY = yProj.z;
+                }
+                else if (yProj.z < minY)
+                {
+                    minY = yProj.z;
+                }
+            }
+
+            var lengthX = Mathf.Abs(maxX) + Mathf.Abs(minX);
+            var lengthY = Mathf.Abs(maxY) + Mathf.Abs(minY);
+
+
+            Debug.Log(lengthX);
+            Debug.Log(lengthY);
         }
     }
 }
