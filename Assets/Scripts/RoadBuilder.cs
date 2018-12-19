@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace experimental
 {
@@ -457,7 +458,6 @@ namespace experimental
             var triangles = new int[3 * intersection.IntersectionBoundPoints.Count];
             var vertexIndex = 1;
             var triIndex = 0;
-            var xyProjections = new Dictionary<int, Projections>();
 
             vertices[0] = intersection.Node.Position;
 
@@ -475,69 +475,79 @@ namespace experimental
                     triIndex += 3;
                     vertexIndex += 1;
                 }
-
-                var dir = intersection.Node.Position - point;
-
-                xyProjections.Add(i, new Projections(Vector3.Project(dir, Vector3.right), Vector3.Project(dir, Vector3.forward)));
             }
 
             triangles[triIndex] = intersection.IntersectionBoundPoints.Count;
             triangles[triIndex + 1] = 1;
             triangles[triIndex + 2] = 0;
 
-            SetUVs(xyProjections);
+            var uvs = GetUVs(intersection);
 
             var go = new GameObject($"Intersection: {intersection.Node.Id}");
-            go.AddComponent<MeshRenderer>();
+            var mr = go.AddComponent<MeshRenderer>();
             var mf = go.AddComponent<MeshFilter>();
 
             var mesh = new Mesh
             {
                 vertices = vertices,
-                triangles = triangles
+                triangles = triangles,
+                uv = uvs
             };
 
             mf.mesh = mesh;
+
+            var mat = Resources.Load<Material>("Lane");
+            mr.material = mat;
+            mr.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        private static void SetUVs(Dictionary<int, Projections> xyProjections)
+        private static Vector2[] GetUVs(Intersection intersection)
         {
             var maxX = float.MinValue;
             var minX = float.MaxValue;
 
-            var maxY = float.MinValue;
-            var minY = float.MaxValue;
+            var maxZ = float.MinValue;
+            var minZ = float.MaxValue;
 
-            foreach (var projection in xyProjections)
+            for (int i = 0; i < intersection.IntersectionBoundPoints.Count; i++)
             {
-                var yProj = projection.Value.YProj;
-                var xProj = projection.Value.XProj;
+                var point = intersection.IntersectionBoundPoints[i] - intersection.Node.Position;
 
-                if (xProj.x > maxX)
+                if (point.x > maxX)
                 {
-                    maxX = xProj.x;
+                    maxX = point.x;
                 }
-                else if (xProj.x < minX)
+                else if (point.x < minX)
                 {
-                    minX = xProj.x;
+                    minX = point.x;
                 }
 
-                if (yProj.z > maxY)
+                if (point.z > maxZ)
                 {
-                    maxY = yProj.z;
+                    maxZ = point.z;
                 }
-                else if (yProj.z < minY)
+                else if (point.z < maxZ)
                 {
-                    minY = yProj.z;
+                    minZ = point.z;
                 }
             }
 
-            var lengthX = Mathf.Abs(maxX) + Mathf.Abs(minX);
-            var lengthY = Mathf.Abs(maxY) + Mathf.Abs(minY);
+            var lowerLeft = new Vector3(minX, 0, minZ);
+            var topRight = new Vector3(maxX, 0, maxZ);
+            var width = Mathf.Abs(maxX) + Mathf.Abs(minX);
+            var height = Mathf.Abs(maxZ) + Mathf.Abs(minZ);
+            var uvs = new Vector2[intersection.IntersectionBoundPoints.Count + 1];
 
+            for (int i = 0; i < intersection.IntersectionBoundPoints.Count; i++)
+            {
+                var pointRelativeToLowerLeft = intersection.IntersectionBoundPoints[i] - intersection.Node.Position - lowerLeft;
+                uvs[i] = new Vector2(pointRelativeToLowerLeft.x / width, pointRelativeToLowerLeft.z / height);
+            }
 
-            Debug.Log(lengthX);
-            Debug.Log(lengthY);
+            //uvs[uvs.Length - 1] = new Vector2(intersection.Node.Position.x / width, intersection.Node.Position.z / height);
+            //uvs[0] = new Vector2(lowerLeft.x / width, lowerLeft.z / height);
+
+            return uvs;
         }
     }
 }
