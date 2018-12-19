@@ -450,24 +450,21 @@ namespace experimental
             for (int i = 0; i < intersection.IntersectionBoundPoints.Count; i++)
             {
                 vertices[vertexIndex] = intersection.IntersectionBoundPoints[i];
-                //vertices[vertexIndex + 1] = intersection.IntersectionBoundPoints[i + 1];
 
                 if (i < intersection.IntersectionBoundPoints.Count - 1)
                 {
                     triangles[triIndex] = vertexIndex;
                     triangles[triIndex + 1] = vertexIndex + 1;
                     triangles[triIndex + 2] = 0;
+
+                    triIndex += 3;
+                    vertexIndex += 1;
                 }
-
-                
-
-                triIndex += 3;
-                vertexIndex += 1;
             }
 
-            //triangles[triIndex] = 1;
-            //triangles[triIndex + 1] = 0;
-            //triangles[triIndex + 3] = intersection.IntersectionBoundPoints.Count - 1;
+            triangles[triIndex] = intersection.IntersectionBoundPoints.Count;
+            triangles[triIndex + 1] = 1;
+            triangles[triIndex + 2] = 0;
 
             var go = new GameObject($"Intersection: {intersection.Node.Id}");
             go.AddComponent<MeshRenderer>();
