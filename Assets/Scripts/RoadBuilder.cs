@@ -79,6 +79,7 @@ namespace experimental
     public class RoadBuilder : MonoBehaviour
     {
         [SerializeField] private Road[] roads;
+        [SerializeField] private float intersectionPadding; 
 
         public Dictionary<Node, List<KeyValuePair<int, Road>>> CheckedNodes = new Dictionary<Node, List<KeyValuePair<int, Road>>>();
         public Dictionary<Node, Intersection> Intersections = new Dictionary<Node, Intersection>();
@@ -141,7 +142,12 @@ namespace experimental
                         if (prevIndex >= 0)
                         {
                             var tuple = new Tuple<Node, Node>(road.Nodes[prevIndex], node);
+
+                           
+
                             node.NodeDataDict[tuple].Segment = new RoadSegment(road.Nodes[prevIndex], node);
+
+                            Debug.Log(node.NodeDataDict[tuple].Segment.LeftBound.BorderPointA - node.NodeDataDict[tuple].Segment.LeftBound.BorderPointB);
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
@@ -151,7 +157,7 @@ namespace experimental
                         }
                     }
                     
-                    Intersections.Add(node, new Intersection(node));
+                    Intersections.Add(node, new Intersection(node, intersectionPadding));
                 }
             }
         }
@@ -220,7 +226,7 @@ namespace experimental
             {
                 foreach (var point in intersection.Value.IntersectionBoundPoints)
                 {
-                    Gizmos.DrawSphere(point, 0.3f);
+                    Gizmos.DrawSphere(point, 0.1f);
                 }
             }
         }

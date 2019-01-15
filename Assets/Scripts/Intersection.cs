@@ -10,6 +10,7 @@ namespace experimental
         {
             public Vector3 BorderPointA { get; }
             public Vector3 BorderPointB { get; }
+            public Vector3 Direction => (BorderPointB - BorderPointA).normalized;
             public List<Vector3> BoundIntersectionPoints { get; } = new List<Vector3>();
 
             public Bound(Vector3 borderPointA, Vector3 borderPointB)
@@ -23,6 +24,7 @@ namespace experimental
         public Node PointB { get; }
         public Bound LeftBound { get; }
         public Bound RightBound { get; }
+        public Vector3 Direction => (PointB.Position - PointA.Position).normalized;
 
         public RoadSegment(Node pointA, Node pointB)
         {
@@ -40,10 +42,12 @@ namespace experimental
         public List<Vector3> IntersectionBoundPoints { get; set; } = new List<Vector3>();
         public List<RoadSegment.Bound> LeftBounds { get; set; } = new List<RoadSegment.Bound>();
         public List<RoadSegment.Bound> RightBounds { get; set; } = new List<RoadSegment.Bound>();
+        public float Padding { get; }
 
-        public Intersection(Node node)
+        public Intersection(Node node, float padding)
         {
             Node = node;
+            Padding = padding;
 
             foreach (var boundPointsKeyValueA in node.NodeDataDict)
             {
@@ -71,6 +75,7 @@ namespace experimental
             var outerNode = segment.PointA == Node ? segment.PointB : segment.PointA;
             var minSqrDist = float.MaxValue;
             var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
+            var directionSign = outerNode == segment.PointB ? -1 : 1;
 
             if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
             {
@@ -89,7 +94,7 @@ namespace experimental
                     }
                 }
 
-                Node.NodeDataDict[tuple].LeftBoundPoint = leftIntersectionBoundPos;
+                Node.NodeDataDict[tuple].LeftBoundPoint = leftIntersectionBoundPos - segment.Direction * directionSign * Padding;
             }
 
             if (segment.RightBound.BoundIntersectionPoints.Count > 0)
@@ -110,7 +115,7 @@ namespace experimental
                     }
                 }
 
-                Node.NodeDataDict[tuple].RightBoundPoint = rightIntersectionBoundPos;
+                Node.NodeDataDict[tuple].RightBoundPoint = rightIntersectionBoundPos - segment.Direction * directionSign * Padding;
             }
         }
 
