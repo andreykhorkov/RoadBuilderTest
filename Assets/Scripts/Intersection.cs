@@ -26,13 +26,12 @@ namespace experimental
         public Bound RightBound { get; }
         public Vector3 Direction => (PointB.Position - PointA.Position).normalized;
 
-        public RoadSegment(Node pointA, Node pointB)
+        public RoadSegment(Tuple<Node, Node> tuple)
         {
-            PointA = pointA;
-            PointB = pointB;
-            var tuple = new Tuple<Node, Node>(pointA, pointB);
-            LeftBound = new Bound(pointA.NodeDataDict[tuple].LeftBoundPoint, pointB.NodeDataDict[tuple].LeftBoundPoint);
-            RightBound = new Bound(pointA.NodeDataDict[tuple].RightBoundPoint, pointB.NodeDataDict[tuple].RightBoundPoint);
+            PointA = tuple.Item1;
+            PointB = tuple.Item2;
+            LeftBound = new Bound(PointA.NodeDataDict[tuple].LeftBoundPoint, PointB.NodeDataDict[tuple].LeftBoundPoint);
+            RightBound = new Bound(PointA.NodeDataDict[tuple].RightBoundPoint, PointB.NodeDataDict[tuple].RightBoundPoint);
         }
     }
 
@@ -76,6 +75,8 @@ namespace experimental
             var minSqrDist = float.MaxValue;
             var tuple = new Tuple<Node, Node>(segment.PointA, segment.PointB);
             var directionSign = outerNode == segment.PointB ? -1 : 1;
+            var outerNodeData = outerNode.NodeDataDict[tuple];
+            var nodeData = Node.NodeDataDict[tuple];
 
             if (segment.LeftBound.BoundIntersectionPoints.Count > 0)
             {
@@ -83,9 +84,7 @@ namespace experimental
 
                 foreach (var point in segment.LeftBound.BoundIntersectionPoints)
                 {
-                    var nodeData = outerNode.NodeDataDict[tuple];
-
-                    var sqrDist = Vector3.SqrMagnitude(nodeData.LeftBoundPoint - point);
+                    var sqrDist = Vector3.SqrMagnitude(outerNodeData.LeftBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -94,7 +93,7 @@ namespace experimental
                     }
                 }
 
-                Node.NodeDataDict[tuple].LeftBoundPoint = leftIntersectionBoundPos - segment.Direction * directionSign * Padding;
+                nodeData.LeftBoundPoint = leftIntersectionBoundPos - segment.Direction * directionSign * Padding;
             }
 
             if (segment.RightBound.BoundIntersectionPoints.Count > 0)
@@ -104,9 +103,7 @@ namespace experimental
 
                 foreach (var point in segment.RightBound.BoundIntersectionPoints)
                 {
-                    var nodeData = outerNode.NodeDataDict[tuple];
-
-                    var sqrDist = Vector3.SqrMagnitude(nodeData.RightBoundPoint - point);
+                    var sqrDist = Vector3.SqrMagnitude(outerNodeData.RightBoundPoint - point);
 
                     if (sqrDist < minSqrDist)
                     {
@@ -115,7 +112,7 @@ namespace experimental
                     }
                 }
 
-                Node.NodeDataDict[tuple].RightBoundPoint = rightIntersectionBoundPos - segment.Direction * directionSign * Padding;
+                nodeData.RightBoundPoint = rightIntersectionBoundPos - segment.Direction * directionSign * Padding;
             }
         }
 

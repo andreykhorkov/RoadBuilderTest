@@ -13,12 +13,14 @@ namespace experimental
         public Vector3 IntersectionPerpendicular { get; private set; }
         public RoadSegment Segment { get; set; }
         public Vector3 PerpendicularIntersectionPoint { get; set; }
+        public Tuple<Node, Node> Tuple { get; }
 
-        public NodeData(Vector3 leftBoundPoint, Vector3 rightBoundPoint, Node node)
+        public NodeData(Vector3 leftBoundPoint, Vector3 rightBoundPoint, Node node, Tuple<Node, Node> tuple)
         {
             LeftBoundPoint = leftBoundPoint;
             RightBoundPoint = rightBoundPoint;
             Node = node;
+            Tuple = tuple;
         }
 
         public void SetIntersectionPerpendicularPoint(Node outerPoint, List<Vector3> intersectionPoints)
@@ -43,6 +45,11 @@ namespace experimental
             {
                 LeftBoundPoint = PerpendicularIntersectionPoint;
             }
+        }
+
+        public void SetRoadSegment()
+        {
+            Segment = new RoadSegment(Tuple);
         }
     }
 

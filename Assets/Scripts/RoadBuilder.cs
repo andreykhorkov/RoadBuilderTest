@@ -142,18 +142,13 @@ namespace experimental
                         if (prevIndex >= 0)
                         {
                             var tuple = new Tuple<Node, Node>(road.Nodes[prevIndex], node);
-
-                           
-
-                            node.NodeDataDict[tuple].Segment = new RoadSegment(road.Nodes[prevIndex], node);
-
-                            Debug.Log(node.NodeDataDict[tuple].Segment.LeftBound.BorderPointA - node.NodeDataDict[tuple].Segment.LeftBound.BorderPointB);
+                            node.NodeDataDict[tuple].SetRoadSegment();
                         }
 
                         if (nextIndex <= road.Nodes.Length - 1)
                         {
                             var tuple = new Tuple<Node, Node>(node, road.Nodes[nextIndex]);
-                            node.NodeDataDict[tuple].Segment = new RoadSegment(node, road.Nodes[nextIndex]);
+                            node.NodeDataDict[tuple].SetRoadSegment();
                         }
                     }
                     
@@ -323,15 +318,18 @@ namespace experimental
                 var cos = Vector3.Dot(avg, perp);
                 var leftBoundPosition = pointA + avg * road.Width * 0.5f / cos;
                 var rightBoundPosition = pointA - avg * road.Width * 0.5f / cos;
+                Tuple<Node, Node> tuple;
 
                 if (prevNode != null)
                 {
-                    node.NodeDataDict[new Tuple<Node, Node>(prevNode, node)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
+                    tuple = new Tuple<Node, Node>(prevNode, node);
+                    node.NodeDataDict[tuple] = new NodeData(leftBoundPosition, rightBoundPosition, node, tuple);
                 }
 
                 if (nextNode != null)
                 {
-                    node.NodeDataDict[new Tuple<Node, Node>(node, nextNode)] = new NodeData(leftBoundPosition, rightBoundPosition, node);
+                    tuple = new Tuple<Node, Node>(node, nextNode);
+                    node.NodeDataDict[tuple] = new NodeData(leftBoundPosition, rightBoundPosition, node, tuple);
                 }
 
                 prevPerp = perp;
